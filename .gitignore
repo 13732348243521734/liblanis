@@ -1,0 +1,17 @@
+# Dart
+.dart_tool/
+.packages
+pubspec.lock
+build/
+doc/api/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Generated (keep riverpod *.g.dart in lib/ for consumers)
+*.freezed.dart
+
+# OS
+.DS_Store

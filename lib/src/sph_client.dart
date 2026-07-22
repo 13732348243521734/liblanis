@@ -1,0 +1,79 @@
+import 'package:dio/dio.dart';
+import 'package:riverpod/misc.dart' show Override;
+import 'package:riverpod/riverpod.dart';
+
+import 'config.dart';
+import 'exceptions.dart';
+import 'providers/core_providers.dart';
+import 'secret_store.dart';
+
+/// Thin bootstrap for the liblanis Riverpod graph.
+///
+/// Hosts create a [ProviderScope] / [ProviderContainer] and apply
+/// [SPHClient.overrides] from [configure].
+class SPHClient {
+  SPHClient._();
+
+  static SphClientConfig? _config;
+  static List<Override>? _overrides;
+
+  /// Last configuration produced by [configure], if any.
+  static SphClientConfig? get config => _config;
+
+  /// Riverpod overrides to pass into [ProviderScope] / [ProviderContainer].
+  static List<Override> get overrides {
+    final o = _overrides;
+    if (o == null) {
+      throw ConfigurationException(
+        'SPHClient.configure must be called before reading overrides',
+      );
+    }
+    return o;
+  }
+
+  /// Configure persistence, secrets, storage, and HTTP.
+  ///
+  /// - [databasePath] null → in-memory sqlite
+  /// - [secretStore] required when [databasePath] is set
+  /// - [documentCacheDirectory] required to use downloads
+  /// - [httpAdapter] optional (e.g. Cronet from Flutter)
+  static List<Override> configure({
+    String? databasePath,
+    SecretStore? secretStore,
+    String? documentCacheDirectory,
+    HttpClientAdapter? httpAdapter,
+    String userAgent = 'liblanis/0.1.0',
+    bool storageEnabled = true,
+    Duration? storageMaxAge,
+    int? storageMaxBytes,
+  }) {
+    if (databasePath != null && secretStore == null) {
+      throw ConfigurationException(
+        'secretStore is required when databasePath is set',
+      );
+    }
+
+    final cfg = SphClientConfig(
+      databasePath: databasePath,
+      secretStore: secretStore ?? (databasePath == null ? MemorySecretStore() : null),
+      documentCacheDirectory: documentCacheDirectory,
+      httpAdapter: httpAdapter,
+      userAgent: userAgent,
+      storageEnabled: storageEnabled,
+      storageMaxAge: storageMaxAge,
+      storageMaxBytes: storageMaxBytes,
+    );
+
+    _config = cfg;
+    _overrides = [
+      sphConfigProvider.overrideWithValue(cfg),
+    ];
+    return _overrides!;
+  }
+
+  /// Clears static configuration (useful in tests).
+  static void reset() {
+    _config = null;
+    _overrides = null;
+  }
+}
