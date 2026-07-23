@@ -98,7 +98,11 @@ class Accounts extends _$Accounts {
     ref.invalidateSelf();
     final active = ref.read(activeAccountProvider);
     if (active?.localId == id) {
-      await ref.read(activeAccountProvider.notifier).select(id);
+      final updated = await ref.read(lanisDatabaseProvider).getAccount(id);
+      if (updated != null) {
+        // replace keeps the live session; select() would tear it down.
+        ref.read(activeAccountProvider.notifier).replace(updated);
+      }
     }
   }
 
@@ -291,7 +295,7 @@ Set<String> supportedAppletPhpUrls(Ref ref) {
   final account = ref.watch(activeAccountProvider);
   if (session == null || account == null) return const {};
 
-  final type = session.account.accountType ?? account.accountType;
+  final type = account.accountType ?? session.accountType;
   return {
     for (final applet in Applets.all)
       if (session.doesSupportFeature(applet, overrideAccountType: type))

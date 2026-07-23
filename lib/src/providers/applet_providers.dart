@@ -26,12 +26,17 @@ import 'core_providers.dart';
 part 'applet_providers.g.dart';
 
 /// Builds only when [sessionProvider] has a ready [SessionHandler].
-/// Invalidated on account switch via [invalidateAccountScopedProviders].
+/// Watches [activeAccountIdProvider] (not the full account) so accountType
+/// [ActiveAccount.replace] does not recreate parsers.
 @Riverpod(keepAlive: true)
 AppletContext appletContext(Ref ref) {
-  final account = ref.watch(activeAccountProvider);
+  final accountId = ref.watch(activeAccountIdProvider);
   final session = ref.watch(sessionProvider).asData?.value;
-  if (account == null || session == null) {
+  final account = ref.read(activeAccountProvider);
+  if (accountId == null ||
+      session == null ||
+      account == null ||
+      account.localId != accountId) {
     throw ConfigurationException(
       'AppletContext requires an active authenticated session',
     );
