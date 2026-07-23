@@ -59,7 +59,11 @@ class Applets {
 
   static const lessons = AppletMeta(
     appletPhpUrl: 'meinunterricht.php',
-    supportedAccountTypes: [AccountType.student, AccountType.teacher],
+    supportedAccountTypes: [
+      AccountType.student,
+      AccountType.teacher,
+      AccountType.parent,
+    ],
     refreshInterval: Duration(minutes: 15),
   );
 
