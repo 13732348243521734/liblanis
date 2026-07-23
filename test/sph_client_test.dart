@@ -41,7 +41,8 @@ void main() {
     expect(shared.getString('color'), 'blue');
 
     final accountSettings = container.read(accountSpecificSettingsProvider);
-    accountSettings.setBool('notifications-allow', false);
+    expect(accountSettings, isNotNull);
+    accountSettings!.setBool('notifications-allow', false);
     expect(accountSettings.getBool('notifications-allow'), isFalse);
 
     expect(container.read(connectionCheckerProvider), isA<ConnectionChecker>());
@@ -78,6 +79,33 @@ void main() {
       identical(sessionBefore, container.read(sessionProvider).asData?.value),
       isTrue,
     );
+  });
+
+  test('selecting another account does not circular-depend settings', () async {
+    final overrides = SPHClient.configure();
+    final container = ProviderContainer(overrides: overrides);
+    addTearDown(container.dispose);
+
+    final id1 = await container.read(accountsProvider.notifier).add(
+      schoolId: 1,
+      schoolName: 'S1',
+      username: 'u1',
+      password: 'p',
+    );
+    final id2 = await container.read(accountsProvider.notifier).add(
+      schoolId: 2,
+      schoolName: 'S2',
+      username: 'u2',
+      password: 'p',
+    );
+
+    await container.read(activeAccountProvider.notifier).select(id1);
+    expect(container.read(accountSpecificSettingsProvider), isNotNull);
+
+    // Previously threw CircularDependencyError on accountSpecificSettingsProvider.
+    await container.read(activeAccountProvider.notifier).select(id2);
+    expect(container.read(activeAccountProvider)?.localId, id2);
+    expect(container.read(accountSpecificSettingsProvider), isNotNull);
   });
 
   test('storage manager available when cache dir configured', () async {

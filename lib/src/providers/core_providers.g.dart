@@ -202,7 +202,7 @@ final class AccountsProvider
   Accounts create() => Accounts();
 }
 
-String _$accountsHash() => r'99d9ca72b27b5a2725d88332233cbd02913bb2f2';
+String _$accountsHash() => r'3cf8519e5d30a8031578ab408d741607b2a7ad43';
 
 abstract class _$Accounts extends $AsyncNotifier<List<AccountSummary>> {
   FutureOr<List<AccountSummary>> build();
@@ -323,7 +323,7 @@ final class ActiveAccountProvider
   }
 }
 
-String _$activeAccountHash() => r'2974a7c89b840ad402afcecad133290f2b1d6ecd';
+String _$activeAccountHash() => r'f91dcc92a5ca20417d18b147719e2a70a77297da';
 
 abstract class _$ActiveAccount extends $Notifier<ClearTextAccount?> {
   ClearTextAccount? build();
@@ -435,8 +435,8 @@ String _$sharedOverAccountSettingsHash() =>
 const accountSpecificSettingsProvider = AccountSpecificSettingsProvider._();
 
 final class AccountSpecificSettingsProvider
-    extends $FunctionalProvider<TypedSettings, TypedSettings, TypedSettings>
-    with $Provider<TypedSettings> {
+    extends $FunctionalProvider<TypedSettings?, TypedSettings?, TypedSettings?>
+    with $Provider<TypedSettings?> {
   const AccountSpecificSettingsProvider._()
     : super(
         from: null,
@@ -453,25 +453,25 @@ final class AccountSpecificSettingsProvider
 
   @$internal
   @override
-  $ProviderElement<TypedSettings> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<TypedSettings?> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  TypedSettings create(Ref ref) {
+  TypedSettings? create(Ref ref) {
     return accountSpecificSettings(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(TypedSettings value) {
+  Override overrideWithValue(TypedSettings? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<TypedSettings>(value),
+      providerOverride: $SyncValueProvider<TypedSettings?>(value),
     );
   }
 }
 
 String _$accountSpecificSettingsHash() =>
-    r'2db515afbbea28af979a348271336d7a34499f79';
+    r'2d45be0868664822fc72e1c92af6f22327522a26';
 
 @ProviderFor(storageManager)
 const storageManagerProvider = StorageManagerProvider._();
@@ -560,4 +560,4 @@ final class SupportedAppletPhpUrlsProvider
 }
 
 String _$supportedAppletPhpUrlsHash() =>
-    r'c789e5f18551bf56ff2f03df19aa2cda4ab47943';
+    r'd65ee5482a8db7e2ed9ca9134fc9bcb32fb32484';

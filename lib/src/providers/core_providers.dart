@@ -143,9 +143,11 @@ class ActiveAccount extends _$ActiveAccount {
 
     state = account;
     ref.read(activeAccountIdProvider.notifier).setId(accountId);
-    // Force a fresh session + dispose account-scoped providers from the prior account.
+    // Fresh session for the new account. Do NOT invalidate providers that
+    // already watch activeAccount / activeAccountId / session — invalidating
+    // them in the same turn as those updates causes CircularDependencyError
+    // (notably accountSpecificSettingsProvider).
     ref.invalidate(sessionProvider);
-    invalidateAccountScopedProviders(ref);
   }
 
   Future<void> selectPreferred() async {
@@ -168,7 +170,6 @@ class ActiveAccount extends _$ActiveAccount {
     state = null;
     ref.read(activeAccountIdProvider.notifier).setId(null);
     ref.invalidate(sessionProvider);
-    invalidateAccountScopedProviders(ref);
   }
 
   /// Replace the in-memory account snapshot (e.g. after accountType is known).
@@ -178,12 +179,13 @@ class ActiveAccount extends _$ActiveAccount {
   }
 }
 
-/// Providers that must not leak data across account switches.
-void invalidateAccountScopedProviders(Ref ref) {
-  ref.invalidate(accountSpecificSettingsProvider);
-  ref.invalidate(storageManagerProvider);
-  ref.invalidate(supportedAppletPhpUrlsProvider);
-  // Applet keepAlive parsers hold SessionHandler / account settings.
+/// Dispose keepAlive applet parsers after an account switch.
+///
+/// Prefer relying on [activeAccountIdProvider] / [sessionProvider] watches.
+/// Only call this when those dependencies alone would leave stale parser
+/// instances (should be rare). Never call from inside a turn that also
+/// updates [activeAccountProvider] — that races with dependents rebuilding.
+void invalidateAppletParsers(Ref ref) {
   ref.invalidate(appletContextProvider);
   ref.invalidate(substitutionsParserProvider);
   ref.invalidate(timetableParserProvider);
@@ -262,13 +264,9 @@ TypedSettings sharedOverAccountSettings(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
-TypedSettings accountSpecificSettings(Ref ref) {
+TypedSettings? accountSpecificSettings(Ref ref) {
   final account = ref.watch(activeAccountProvider);
-  if (account == null) {
-    throw ConfigurationException(
-      'accountSpecificSettings requires an active account',
-    );
-  }
+  if (account == null) return null;
   final db = ref.watch(lanisDatabaseProvider);
   return TypedSettings.account(db, account.localId);
 }
