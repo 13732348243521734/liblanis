@@ -305,7 +305,7 @@ final class SessionProvider
   Session create() => Session();
 }
 
-String _$sessionHash() => r'f0be90f864a630933a67e4e34beea4a5e298107c';
+String _$sessionHash() => r'51e7d289a87403faf54255d8d42387ecc8c29d3c';
 
 abstract class _$Session extends $AsyncNotifier<SessionHandler?> {
   FutureOr<SessionHandler?> build();

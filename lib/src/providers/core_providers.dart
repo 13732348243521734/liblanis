@@ -158,12 +158,18 @@ class Session extends _$Session {
     return session;
   }
 
-  Future<SessionHandler> authenticate({String? withLoginUrl}) async {
+  Future<SessionHandler> authenticate({
+    String? withLoginUrl,
+    bool withoutData = false,
+  }) async {
     final session = await future;
     if (session == null) {
       throw ConfigurationException('No active account selected');
     }
-    await session.authenticate(withLoginUrl: withLoginUrl);
+    await session.authenticate(
+      withLoginUrl: withLoginUrl,
+      withoutData: withoutData,
+    );
     final db = ref.read(lanisDatabaseProvider);
     await db.updateLastLogin(session.account.localId);
     if (session.account.accountType == null) {
