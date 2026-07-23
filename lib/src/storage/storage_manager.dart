@@ -113,6 +113,8 @@ class StorageManager {
       options: Options(
         responseType: ResponseType.bytes,
         followRedirects: false,
+        validateStatus: (status) =>
+            status != null && (status == 200 || status == 302),
       ),
     );
 
@@ -131,9 +133,16 @@ class StorageManager {
           options: Options(
             responseType: ResponseType.bytes,
             followRedirects: false,
+            validateStatus: (status) => status == 200,
           ),
         );
       }
+    }
+
+    if (response.statusCode != 200 || response.data is! List<int>) {
+      throw NetworkException(
+        'Download failed with status ${response.statusCode}',
+      );
     }
 
     final file = File(savePath);

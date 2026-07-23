@@ -225,16 +225,17 @@ class TimeTableData {
     Map<String, dynamic> settings,
     this.weekBadge,
   ) {
-    for (var (index, hour) in timetable.hours!.indexed) {
-      if (index > 0 && timetable.hours![index - 1].endTime != hour.startTime) {
-        if (timetable.hours![index - 1].endTime.differenceInMinutes(
+    final schoolHours = timetable.hours ?? const <TimeTableRow>[];
+    for (var (index, hour) in schoolHours.indexed) {
+      if (index > 0 && schoolHours[index - 1].endTime != hour.startTime) {
+        if (schoolHours[index - 1].endTime.differenceInMinutes(
               hour.startTime,
             ) >
             10) {
           hours.add(
             TimeTableRow(
               TimeTableRowType.pause,
-              timetable.hours![index - 1].endTime,
+              schoolHours[index - 1].endTime,
               hour.startTime,
               'Pause',
               -1,
