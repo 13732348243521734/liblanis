@@ -9,19 +9,22 @@ part of 'applet_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Builds only when [sessionProvider] has a ready [SessionHandler].
-/// Invalidated on account switch via [invalidateAccountScopedProviders].
+/// Watches [activeAccountIdProvider] (not the full account) so accountType
+/// [ActiveAccount.replace] does not recreate parsers.
 
 @ProviderFor(appletContext)
 const appletContextProvider = AppletContextProvider._();
 
 /// Builds only when [sessionProvider] has a ready [SessionHandler].
-/// Invalidated on account switch via [invalidateAccountScopedProviders].
+/// Watches [activeAccountIdProvider] (not the full account) so accountType
+/// [ActiveAccount.replace] does not recreate parsers.
 
 final class AppletContextProvider
     extends $FunctionalProvider<AppletContext, AppletContext, AppletContext>
     with $Provider<AppletContext> {
   /// Builds only when [sessionProvider] has a ready [SessionHandler].
-  /// Invalidated on account switch via [invalidateAccountScopedProviders].
+  /// Watches [activeAccountIdProvider] (not the full account) so accountType
+  /// [ActiveAccount.replace] does not recreate parsers.
   const AppletContextProvider._()
     : super(
         from: null,
@@ -55,7 +58,7 @@ final class AppletContextProvider
   }
 }
 
-String _$appletContextHash() => r'543e791c9aa3d9ed60d87fd0c56a5b4c6a7963a9';
+String _$appletContextHash() => r'f46766b33a3da3c9ed3bab77ba283e312ffded6f';
 
 @ProviderFor(substitutionsParser)
 const substitutionsParserProvider = SubstitutionsParserProvider._();
