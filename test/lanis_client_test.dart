@@ -3,17 +3,17 @@ import 'package:riverpod/riverpod.dart';
 import 'package:test/test.dart';
 
 void main() {
-  tearDown(SPHClient.reset);
+  tearDown(LanisClient.reset);
 
   test('configure requires secretStore for file path', () {
     expect(
-      () => SPHClient.configure(databasePath: '/tmp/x.db'),
+      () => LanisClient.configure(databasePath: '/tmp/x.db'),
       throwsA(isA<ConfigurationException>()),
     );
   });
 
   test('configure in-memory and wire providers', () async {
-    final overrides = SPHClient.configure();
+    final overrides = LanisClient.configure();
     final container = ProviderContainer(overrides: overrides);
     addTearDown(container.dispose);
 
@@ -50,7 +50,7 @@ void main() {
   });
 
   test('replace accountType does not change activeAccountId', () async {
-    final overrides = SPHClient.configure();
+    final overrides = LanisClient.configure();
     final container = ProviderContainer(overrides: overrides);
     addTearDown(container.dispose);
 
@@ -82,7 +82,7 @@ void main() {
   });
 
   test('selecting another account does not circular-depend settings', () async {
-    final overrides = SPHClient.configure();
+    final overrides = LanisClient.configure();
     final container = ProviderContainer(overrides: overrides);
     addTearDown(container.dispose);
 
@@ -109,7 +109,7 @@ void main() {
   });
 
   test('storage manager available when cache dir configured', () async {
-    final overrides = SPHClient.configure(
+    final overrides = LanisClient.configure(
       documentCacheDirectory: '/tmp/liblanis_cache_test',
     );
     final container = ProviderContainer(overrides: overrides);

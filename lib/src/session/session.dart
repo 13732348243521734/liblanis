@@ -18,9 +18,9 @@ import '../models/account_types.dart';
 import 'cryptor.dart';
 
 /// Authenticated SPH HTTP session for one account.
-class SessionHandler {
+class LanisSession {
   final ClearTextAccount account;
-  final SphClientConfig config;
+  final LanisConfig config;
   final ConnectionChecker connectionChecker;
 
   late Cryptor cryptor = Cryptor();
@@ -36,7 +36,7 @@ class SessionHandler {
 
   AccountType get accountType => accountTypeOrNull!;
 
-  SessionHandler({
+  LanisSession({
     required this.account,
     required this.config,
     required this.connectionChecker,
@@ -169,7 +169,7 @@ class SessionHandler {
 
   static Future<String> getLoginURL(
     ClearTextAccount acc,
-    SphClientConfig config,
+    LanisConfig config,
   ) async {
     final dioHttp = Dio();
     final cookieJar = CookieJar(ignoreExpires: true);
@@ -319,7 +319,7 @@ class SessionHandler {
     _closeDioWithoutSharedAdapter(dio, config.httpAdapter);
   }
 
-  /// [SphClientConfig.httpAdapter] (e.g. Flutter Cronet) is shared across
+  /// [LanisConfig.httpAdapter] (e.g. Flutter Cronet) is shared across
   /// sessions. [Dio.close] closes the adapter — swap it out first.
   static void _closeDioWithoutSharedAdapter(
     Dio dio,

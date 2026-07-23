@@ -3,9 +3,9 @@ import '../models/account.dart';
 import '../session/session.dart';
 import '../settings/typed_settings.dart';
 
-/// Runtime context for applet parsers (replaces app SPH facade).
+/// Runtime context for applet parsers (session + account-scoped settings).
 class AppletContext {
-  final SessionHandler session;
+  final LanisSession session;
   final LanisDatabase database;
   final ClearTextAccount account;
   final TypedSettings accountSettings;

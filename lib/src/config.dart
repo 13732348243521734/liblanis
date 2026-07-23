@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 
 import 'secret_store.dart';
 
-/// Immutable configuration produced by [SPHClient.configure].
-class SphClientConfig {
+/// Immutable configuration produced by [LanisClient.configure].
+class LanisConfig {
   /// Absolute path to the sqlite DB file, or null for in-memory.
   final String? databasePath;
 
@@ -28,7 +28,7 @@ class SphClientConfig {
   /// Optional max total cache size in bytes; null means unlimited.
   final int? storageMaxBytes;
 
-  const SphClientConfig({
+  const LanisConfig({
     this.databasePath,
     this.secretStore,
     this.documentCacheDirectory,
@@ -39,7 +39,7 @@ class SphClientConfig {
     this.storageMaxBytes,
   });
 
-  SphClientConfig copyWith({
+  LanisConfig copyWith({
     String? databasePath,
     SecretStore? secretStore,
     String? documentCacheDirectory,
@@ -49,7 +49,7 @@ class SphClientConfig {
     Duration? storageMaxAge,
     int? storageMaxBytes,
   }) {
-    return SphClientConfig(
+    return LanisConfig(
       databasePath: databasePath ?? this.databasePath,
       secretStore: secretStore ?? this.secretStore,
       documentCacheDirectory:

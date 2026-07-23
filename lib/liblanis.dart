@@ -1,6 +1,6 @@
-/// Pure Dart SPH (Schulportal Hessen) client.
+/// Pure Dart Lanis (Schulportal Hessen) client.
 ///
-/// Configure with [SPHClient.configure], apply [SPHClient.overrides] to a
+/// Configure with [LanisClient.configure], apply [LanisClient.overrides] to a
 /// Riverpod [ProviderScope]/[ProviderContainer], then use the exported providers.
 library;
 
@@ -34,8 +34,7 @@ export 'src/models/timetable.dart';
 export 'src/providers/applet_providers.dart';
 export 'src/providers/core_providers.dart';
 export 'src/secret_store.dart';
-export 'src/session/cryptor.dart';
 export 'src/session/session.dart';
 export 'src/settings/typed_settings.dart';
-export 'src/sph_client.dart';
+export 'src/lanis_client.dart';
 export 'src/storage/storage_manager.dart';

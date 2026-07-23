@@ -104,7 +104,7 @@ class ConfigurationException extends LanisException {
   ConfigurationException([super.cause]);
 
   @override
-  String get defaultMessage => 'Invalid SPHClient configuration';
+  String get defaultMessage => 'Invalid LanisClient configuration';
 }
 
 class StorageNotConfiguredException extends LanisException {

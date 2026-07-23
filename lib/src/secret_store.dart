@@ -1,6 +1,6 @@
 /// Host-provided secure storage for account secrets (passwords).
 ///
-/// Required when [SPHClient.configure] is given a non-null [databasePath].
+/// Required when [LanisClient.configure] is given a non-null [databasePath].
 /// Unused for in-memory databases (secrets may stay in process memory).
 abstract class SecretStore {
   Future<void> write(String key, String value);

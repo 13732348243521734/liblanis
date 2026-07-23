@@ -8,21 +8,21 @@ part of 'applet_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Builds only when [sessionProvider] has a ready [SessionHandler].
+/// Builds only when [sessionProvider] has a ready [LanisSession].
 /// Watches [activeAccountIdProvider] (not the full account) so accountType
 /// [ActiveAccount.replace] does not recreate parsers.
 
 @ProviderFor(appletContext)
 const appletContextProvider = AppletContextProvider._();
 
-/// Builds only when [sessionProvider] has a ready [SessionHandler].
+/// Builds only when [sessionProvider] has a ready [LanisSession].
 /// Watches [activeAccountIdProvider] (not the full account) so accountType
 /// [ActiveAccount.replace] does not recreate parsers.
 
 final class AppletContextProvider
     extends $FunctionalProvider<AppletContext, AppletContext, AppletContext>
     with $Provider<AppletContext> {
-  /// Builds only when [sessionProvider] has a ready [SessionHandler].
+  /// Builds only when [sessionProvider] has a ready [LanisSession].
   /// Watches [activeAccountIdProvider] (not the full account) so accountType
   /// [ActiveAccount.replace] does not recreate parsers.
   const AppletContextProvider._()

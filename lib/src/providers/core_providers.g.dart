@@ -9,47 +9,46 @@ part of 'core_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(sphConfig)
-const sphConfigProvider = SphConfigProvider._();
+@ProviderFor(lanisConfig)
+const lanisConfigProvider = LanisConfigProvider._();
 
-final class SphConfigProvider
-    extends
-        $FunctionalProvider<SphClientConfig, SphClientConfig, SphClientConfig>
-    with $Provider<SphClientConfig> {
-  const SphConfigProvider._()
+final class LanisConfigProvider
+    extends $FunctionalProvider<LanisConfig, LanisConfig, LanisConfig>
+    with $Provider<LanisConfig> {
+  const LanisConfigProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'sphConfigProvider',
+        name: r'lanisConfigProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$sphConfigHash();
+  String debugGetCreateSourceHash() => _$lanisConfigHash();
 
   @$internal
   @override
-  $ProviderElement<SphClientConfig> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<LanisConfig> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  SphClientConfig create(Ref ref) {
-    return sphConfig(ref);
+  LanisConfig create(Ref ref) {
+    return lanisConfig(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SphClientConfig value) {
+  Override overrideWithValue(LanisConfig value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<SphClientConfig>(value),
+      providerOverride: $SyncValueProvider<LanisConfig>(value),
     );
   }
 }
 
-String _$sphConfigHash() => r'c729573fdefe799e6608f810904cdeba30372270';
+String _$lanisConfigHash() => r'665bf76b7088ff625b58f6b855051719d9fb7a8a';
 
 @ProviderFor(lanisDatabase)
 const lanisDatabaseProvider = LanisDatabaseProvider._();
@@ -90,7 +89,7 @@ final class LanisDatabaseProvider
   }
 }
 
-String _$lanisDatabaseHash() => r'63f3cf94df11a2ebe8fbde7dedc3052766f87606';
+String _$lanisDatabaseHash() => r'abc0473bf5057e3193ce7ec94ceb489e64541f9a';
 
 @ProviderFor(connectionChecker)
 const connectionCheckerProvider = ConnectionCheckerProvider._();
@@ -137,7 +136,7 @@ final class ConnectionCheckerProvider
   }
 }
 
-String _$connectionCheckerHash() => r'b7d4f9b3f17d58858958037dbb433bbbc0ecdbb1';
+String _$connectionCheckerHash() => r'9eea29957861b0fef35e88fd51eeb49c96156451';
 
 @ProviderFor(connectionStatus)
 const connectionStatusProvider = ConnectionStatusProvider._();
@@ -348,7 +347,7 @@ abstract class _$ActiveAccount extends $Notifier<ClearTextAccount?> {
 const sessionProvider = SessionProvider._();
 
 final class SessionProvider
-    extends $AsyncNotifierProvider<Session, SessionHandler?> {
+    extends $AsyncNotifierProvider<Session, LanisSession?> {
   const SessionProvider._()
     : super(
         from: null,
@@ -368,20 +367,20 @@ final class SessionProvider
   Session create() => Session();
 }
 
-String _$sessionHash() => r'bae50fa47522c3c18a2c99abadd622dad5edd32f';
+String _$sessionHash() => r'741efdfbcd2a2f37b8f58f9ed40b65ef71c1f4cd';
 
-abstract class _$Session extends $AsyncNotifier<SessionHandler?> {
-  FutureOr<SessionHandler?> build();
+abstract class _$Session extends $AsyncNotifier<LanisSession?> {
+  FutureOr<LanisSession?> build();
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build();
-    final ref = this.ref as $Ref<AsyncValue<SessionHandler?>, SessionHandler?>;
+    final ref = this.ref as $Ref<AsyncValue<LanisSession?>, LanisSession?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<SessionHandler?>, SessionHandler?>,
-              AsyncValue<SessionHandler?>,
+              AnyNotifier<AsyncValue<LanisSession?>, LanisSession?>,
+              AsyncValue<LanisSession?>,
               Object?,
               Object?
             >;
@@ -513,7 +512,7 @@ final class StorageManagerProvider
   }
 }
 
-String _$storageManagerHash() => r'73ba613f27ceb2b371cc567e7375e5f17f0cf6d5';
+String _$storageManagerHash() => r'0c7a22ab7ce89a1b86173d3d6a1dc7d1776dece9';
 
 /// Bumped after [Session.authenticate] mutates travelMenu in place so
 /// [supportedAppletPhpUrls] refreshes without invalidating mid-rebuild.

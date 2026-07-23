@@ -47,7 +47,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liblanis/liblanis.dart';
 
 Future<void> main() async {
-  final overrides = SPHClient.configure(
+  final overrides = LanisClient.configure(
     databasePath: '/path/to/lanis.db', // null => in-memory
     secretStore: MySecureStore(),      // required when databasePath != null
     documentCacheDirectory: '/path/to/cache', // required for downloads

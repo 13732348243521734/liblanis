@@ -16,15 +16,15 @@ import '../applets/definition.dart';
 part 'core_providers.g.dart';
 
 @Riverpod(keepAlive: true)
-SphClientConfig sphConfig(Ref ref) {
+LanisConfig lanisConfig(Ref ref) {
   throw ConfigurationException(
-    'SPHClient is not configured. Call SPHClient.configure and apply overrides.',
+    'LanisClient is not configured. Call LanisClient.configure and apply overrides.',
   );
 }
 
 @Riverpod(keepAlive: true)
 LanisDatabase lanisDatabase(Ref ref) {
-  final config = ref.watch(sphConfigProvider);
+  final config = ref.watch(lanisConfigProvider);
   final db = LanisDatabase.open(
     path: config.databasePath,
     secretStore: config.secretStore,
@@ -35,7 +35,7 @@ LanisDatabase lanisDatabase(Ref ref) {
 
 @Riverpod(keepAlive: true)
 ConnectionChecker connectionChecker(Ref ref) {
-  final config = ref.watch(sphConfigProvider);
+  final config = ref.watch(lanisConfigProvider);
   final checker = ConnectionChecker(httpAdapter: config.httpAdapter);
   ref.onDispose(checker.dispose);
   return checker;
@@ -184,15 +184,15 @@ class ActiveAccount extends _$ActiveAccount {
 @Riverpod(keepAlive: true)
 class Session extends _$Session {
   @override
-  FutureOr<SessionHandler?> build() async {
+  FutureOr<LanisSession?> build() async {
     final accountId = ref.watch(activeAccountIdProvider);
     if (accountId == null) return null;
     final account = ref.read(activeAccountProvider);
     if (account == null || account.localId != accountId) return null;
 
-    final config = ref.watch(sphConfigProvider);
+    final config = ref.watch(lanisConfigProvider);
     final checker = ref.watch(connectionCheckerProvider);
-    final session = SessionHandler(
+    final session = LanisSession(
       account: account,
       config: config,
       connectionChecker: checker,
@@ -202,7 +202,7 @@ class Session extends _$Session {
     return session;
   }
 
-  Future<SessionHandler> authenticate({
+  Future<LanisSession> authenticate({
     String? withLoginUrl,
     bool withoutData = false,
   }) async {
@@ -229,7 +229,7 @@ class Session extends _$Session {
       }
     }
     // Notify listeners: travelMenu / accountType are mutated on [session].
-    // Same SessionHandler instance may already be in [state], so AsyncData
+    // Same LanisSession instance may already be in [state], so AsyncData
     // equality would skip notifications — bump the feature epoch instead.
     // Never invalidate supportedAppletPhpUrlsProvider in this turn (circular).
     state = AsyncData(session);
@@ -263,7 +263,7 @@ TypedSettings? accountSpecificSettings(Ref ref) {
 
 @Riverpod(keepAlive: true)
 StorageManager? storageManager(Ref ref) {
-  final config = ref.watch(sphConfigProvider);
+  final config = ref.watch(lanisConfigProvider);
   final account = ref.watch(activeAccountProvider);
   final sessionAsync = ref.watch(sessionProvider);
   final session = sessionAsync.asData?.value;

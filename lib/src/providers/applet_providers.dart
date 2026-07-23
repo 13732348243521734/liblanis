@@ -15,7 +15,7 @@ import 'core_providers.dart';
 
 part 'applet_providers.g.dart';
 
-/// Builds only when [sessionProvider] has a ready [SessionHandler].
+/// Builds only when [sessionProvider] has a ready [LanisSession].
 /// Watches [activeAccountIdProvider] (not the full account) so accountType
 /// [ActiveAccount.replace] does not recreate parsers.
 @Riverpod(keepAlive: true)

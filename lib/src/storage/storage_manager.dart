@@ -19,8 +19,8 @@ typedef StoragePathLayout =
 
 /// Configurable document/file cache backed by the session Dio client.
 class StorageManager {
-  final SessionHandler session;
-  final SphClientConfig config;
+  final LanisSession session;
+  final LanisConfig config;
   final int accountId;
 
   /// Override how cache relative paths are built.

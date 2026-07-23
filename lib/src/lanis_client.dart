@@ -10,22 +10,22 @@ import 'secret_store.dart';
 /// Thin bootstrap for the liblanis Riverpod graph.
 ///
 /// Hosts create a [ProviderScope] / [ProviderContainer] and apply
-/// [SPHClient.overrides] from [configure].
-class SPHClient {
-  SPHClient._();
+/// [LanisClient.overrides] from [configure].
+class LanisClient {
+  LanisClient._();
 
-  static SphClientConfig? _config;
+  static LanisConfig? _config;
   static List<Override>? _overrides;
 
   /// Last configuration produced by [configure], if any.
-  static SphClientConfig? get config => _config;
+  static LanisConfig? get config => _config;
 
   /// Riverpod overrides to pass into [ProviderScope] / [ProviderContainer].
   static List<Override> get overrides {
     final o = _overrides;
     if (o == null) {
       throw ConfigurationException(
-        'SPHClient.configure must be called before reading overrides',
+        'LanisClient.configure must be called before reading overrides',
       );
     }
     return o;
@@ -53,7 +53,7 @@ class SPHClient {
       );
     }
 
-    final cfg = SphClientConfig(
+    final cfg = LanisConfig(
       databasePath: databasePath,
       secretStore: secretStore ?? (databasePath == null ? MemorySecretStore() : null),
       documentCacheDirectory: documentCacheDirectory,
@@ -66,7 +66,7 @@ class SPHClient {
 
     _config = cfg;
     _overrides = [
-      sphConfigProvider.overrideWithValue(cfg),
+      lanisConfigProvider.overrideWithValue(cfg),
     ];
     return _overrides!;
   }
