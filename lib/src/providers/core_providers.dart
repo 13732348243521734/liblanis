@@ -243,9 +243,12 @@ class Session extends _$Session {
       }
     }
     // Notify listeners: travelMenu / accountType are mutated on [session].
+    // Same SessionHandler instance may already be in [state], so AsyncData
+    // equality would skip notifications — bump the feature epoch instead.
+    // Never invalidate supportedAppletPhpUrlsProvider in this turn (circular).
     state = AsyncData(session);
+    ref.read(sessionFeatureEpochProvider.notifier).bump();
     ref.invalidate(accountsProvider);
-    ref.invalidate(supportedAppletPhpUrlsProvider);
     return session;
   }
 
@@ -287,9 +290,20 @@ StorageManager? storageManager(Ref ref) {
   );
 }
 
+/// Bumped after [Session.authenticate] mutates travelMenu in place so
+/// [supportedAppletPhpUrls] refreshes without invalidating mid-rebuild.
+@Riverpod(keepAlive: true)
+class SessionFeatureEpoch extends _$SessionFeatureEpoch {
+  @override
+  int build() => 0;
+
+  void bump() => state++;
+}
+
 /// PHP applet URLs supported by the current authenticated session + account type.
 @Riverpod(keepAlive: true)
 Set<String> supportedAppletPhpUrls(Ref ref) {
+  ref.watch(sessionFeatureEpochProvider);
   final session = ref.watch(sessionProvider).asData?.value;
   final account = ref.watch(activeAccountProvider);
   if (session == null || account == null) return const {};

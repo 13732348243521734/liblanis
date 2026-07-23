@@ -323,7 +323,7 @@ final class ActiveAccountProvider
   }
 }
 
-String _$activeAccountHash() => r'f91dcc92a5ca20417d18b147719e2a70a77297da';
+String _$activeAccountHash() => r'e6731c475a55f2c4f7d8810ab088debe7f9a620b';
 
 abstract class _$ActiveAccount extends $Notifier<ClearTextAccount?> {
   ClearTextAccount? build();
@@ -368,7 +368,7 @@ final class SessionProvider
   Session create() => Session();
 }
 
-String _$sessionHash() => r'214e4ea129b6ece0ba47bea857d946fdb122f7b8';
+String _$sessionHash() => r'eef004acbd14cc63cfc7a6540af726f9693d9021';
 
 abstract class _$Session extends $AsyncNotifier<SessionHandler?> {
   FutureOr<SessionHandler?> build();
@@ -515,6 +515,70 @@ final class StorageManagerProvider
 
 String _$storageManagerHash() => r'73ba613f27ceb2b371cc567e7375e5f17f0cf6d5';
 
+/// Bumped after [Session.authenticate] mutates travelMenu in place so
+/// [supportedAppletPhpUrls] refreshes without invalidating mid-rebuild.
+
+@ProviderFor(SessionFeatureEpoch)
+const sessionFeatureEpochProvider = SessionFeatureEpochProvider._();
+
+/// Bumped after [Session.authenticate] mutates travelMenu in place so
+/// [supportedAppletPhpUrls] refreshes without invalidating mid-rebuild.
+final class SessionFeatureEpochProvider
+    extends $NotifierProvider<SessionFeatureEpoch, int> {
+  /// Bumped after [Session.authenticate] mutates travelMenu in place so
+  /// [supportedAppletPhpUrls] refreshes without invalidating mid-rebuild.
+  const SessionFeatureEpochProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sessionFeatureEpochProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sessionFeatureEpochHash();
+
+  @$internal
+  @override
+  SessionFeatureEpoch create() => SessionFeatureEpoch();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(int value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<int>(value),
+    );
+  }
+}
+
+String _$sessionFeatureEpochHash() =>
+    r'05e5f29fa0e306c557a665a26e2585627f3c91fa';
+
+/// Bumped after [Session.authenticate] mutates travelMenu in place so
+/// [supportedAppletPhpUrls] refreshes without invalidating mid-rebuild.
+
+abstract class _$SessionFeatureEpoch extends $Notifier<int> {
+  int build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<int, int>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<int, int>,
+              int,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
 /// PHP applet URLs supported by the current authenticated session + account type.
 
 @ProviderFor(supportedAppletPhpUrls)
@@ -560,4 +624,4 @@ final class SupportedAppletPhpUrlsProvider
 }
 
 String _$supportedAppletPhpUrlsHash() =>
-    r'd65ee5482a8db7e2ed9ca9134fc9bcb32fb32484';
+    r'ad9f65cec2036fed6f8dff9ea20c6f8ce84a77a0';
