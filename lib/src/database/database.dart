@@ -126,14 +126,14 @@ class LanisDatabase {
 
   Future<List<AccountSummary>> listAccounts() async {
     final rows = _db.select(
-      'SELECT * FROM accounts ORDER BY last_login IS NULL DESC, last_login DESC, id ASC',
+      'SELECT * FROM accounts ORDER BY last_login IS NULL ASC, last_login DESC, id ASC',
     );
     return rows.map(_rowToSummary).toList();
   }
 
   Future<ClearTextAccount?> getPreferredStartupAccount() async {
     final rows = _db.select(
-      'SELECT * FROM accounts ORDER BY last_login IS NULL DESC, last_login DESC, id ASC LIMIT 1',
+      'SELECT * FROM accounts ORDER BY last_login IS NULL ASC, last_login DESC, id ASC LIMIT 1',
     );
     if (rows.isEmpty) return null;
     return _rowToClearText(rows.first);

@@ -313,7 +313,8 @@ Set<String> supportedAppletPhpUrls(Ref ref) {
   final account = ref.watch(activeAccountProvider);
   if (session == null || account == null) return const {};
 
-  final type = account.accountType ?? session.accountType;
+  final type = account.accountType ?? session.accountTypeOrNull;
+  if (type == null) return const {};
   return {
     for (final applet in Applets.all)
       if (session.doesSupportFeature(applet, overrideAccountType: type))
