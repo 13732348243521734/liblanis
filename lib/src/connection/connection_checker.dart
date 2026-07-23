@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 
 enum ConnectionStatus { connected, disconnected }
 
@@ -10,10 +11,12 @@ class ConnectionChecker {
   final _statusController = StreamController<ConnectionStatus>.broadcast();
   late final Dio dio;
   DateTime lastRequest = DateTime.now().subtract(const Duration(seconds: 5));
+  final HttpClientAdapter? _sharedAdapter;
 
   Stream<ConnectionStatus> get statusStream => _statusController.stream;
 
-  ConnectionChecker({HttpClientAdapter? httpAdapter}) {
+  ConnectionChecker({HttpClientAdapter? httpAdapter})
+    : _sharedAdapter = httpAdapter {
     dio = Dio(BaseOptions(validateStatus: (status) => status != null));
     if (httpAdapter != null) {
       dio.httpClientAdapter = httpAdapter;
@@ -51,6 +54,11 @@ class ConnectionChecker {
 
   void dispose() {
     _statusController.close();
+    // Shared Cronet/native adapters must not be closed with this Dio.
+    if (_sharedAdapter != null &&
+        identical(dio.httpClientAdapter, _sharedAdapter)) {
+      dio.httpClientAdapter = IOHttpClientAdapter();
+    }
     dio.close(force: true);
   }
 }

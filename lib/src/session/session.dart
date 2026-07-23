@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
@@ -153,58 +154,62 @@ class SessionHandler {
       dioHttp.httpClientAdapter = config.httpAdapter!;
     }
 
-    dioHttp.interceptors.add(
-      InterceptorsWrapper(
-        onResponse: (response, handler) {
-          response.headers.forEach((name, values) {
-            if (name.toLowerCase() == 'set-cookie') {
-              for (var i = 0; i < values.length; i++) {
-                values[i] = values[i].replaceAll('HttpOnly=1', 'HttpOnly');
+    try {
+      dioHttp.interceptors.add(
+        InterceptorsWrapper(
+          onResponse: (response, handler) {
+            response.headers.forEach((name, values) {
+              if (name.toLowerCase() == 'set-cookie') {
+                for (var i = 0; i < values.length; i++) {
+                  values[i] = values[i].replaceAll('HttpOnly=1', 'HttpOnly');
+                }
               }
-            }
-          });
-          return handler.next(response);
+            });
+            return handler.next(response);
+          },
+        ),
+      );
+      dioHttp.interceptors.add(CookieManager(cookieJar));
+      dioHttp.options.followRedirects = false;
+      dioHttp.options.validateStatus = (status) =>
+          status != null && (status == 200 || status == 302 || status == 503);
+
+      final response1 = await dioHttp.post(
+        'https://login.schulportal.hessen.de/?i=${acc.schoolID}',
+        data: {
+          'user': '${acc.schoolID}.${acc.username}',
+          'user2': acc.username,
+          'password': acc.password,
         },
-      ),
-    );
-    dioHttp.interceptors.add(CookieManager(cookieJar));
-    dioHttp.options.followRedirects = false;
-    dioHttp.options.validateStatus = (status) =>
-        status != null && (status == 200 || status == 302 || status == 503);
-
-    final response1 = await dioHttp.post(
-      'https://login.schulportal.hessen.de/?i=${acc.schoolID}',
-      data: {
-        'user': '${acc.schoolID}.${acc.username}',
-        'user2': acc.username,
-        'password': acc.password,
-      },
-      options: Options(
-        contentType: 'application/x-www-form-urlencoded',
-        headers: {'User-Agent': config.userAgent},
-      ),
-    );
-
-    if (response1.statusCode == 503) {
-      throw LanisDownException();
-    }
-
-    final loginTimeout = parse(
-      response1.data,
-    ).getElementById('authErrorLocktime');
-
-    if (response1.headers.value(HttpHeaders.locationHeader) != null) {
-      final response2 = await dioHttp.get(
-        'https://connect.schulportal.hessen.de',
+        options: Options(
+          contentType: 'application/x-www-form-urlencoded',
+          headers: {'User-Agent': config.userAgent},
+        ),
       );
-      return response2.headers.value(HttpHeaders.locationHeader) ?? '';
-    } else if (loginTimeout != null) {
-      throw LoginTimeoutException(
-        loginTimeout.text,
-        'Too many failed logins. Wait ${loginTimeout.text}s before retrying.',
-      );
-    } else {
-      throw WrongCredentialsException();
+
+      if (response1.statusCode == 503) {
+        throw LanisDownException();
+      }
+
+      final loginTimeout = parse(
+        response1.data,
+      ).getElementById('authErrorLocktime');
+
+      if (response1.headers.value(HttpHeaders.locationHeader) != null) {
+        final response2 = await dioHttp.get(
+          'https://connect.schulportal.hessen.de',
+        );
+        return response2.headers.value(HttpHeaders.locationHeader) ?? '';
+      } else if (loginTimeout != null) {
+        throw LoginTimeoutException(
+          loginTimeout.text,
+          'Too many failed logins. Wait ${loginTimeout.text}s before retrying.',
+        );
+      } else {
+        throw WrongCredentialsException();
+      }
+    } finally {
+      _closeDioWithoutSharedAdapter(dioHttp, config.httpAdapter);
     }
   }
 
@@ -288,6 +293,18 @@ class SessionHandler {
 
   Future<void> dispose() async {
     preventLogoutTimer?.cancel();
+    _closeDioWithoutSharedAdapter(dio, config.httpAdapter);
+  }
+
+  /// [SphClientConfig.httpAdapter] (e.g. Flutter Cronet) is shared across
+  /// sessions. [Dio.close] closes the adapter — swap it out first.
+  static void _closeDioWithoutSharedAdapter(
+    Dio dio,
+    HttpClientAdapter? shared,
+  ) {
+    if (shared != null && identical(dio.httpClientAdapter, shared)) {
+      dio.httpClientAdapter = IOHttpClientAdapter();
+    }
     dio.close(force: true);
   }
 }

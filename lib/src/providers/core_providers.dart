@@ -142,12 +142,13 @@ class ActiveAccount extends _$ActiveAccount {
     }
 
     state = account;
+    final previousId = ref.read(activeAccountIdProvider);
     ref.read(activeAccountIdProvider.notifier).setId(accountId);
-    // Fresh session for the new account. Do NOT invalidate providers that
-    // already watch activeAccount / activeAccountId / session — invalidating
-    // them in the same turn as those updates causes CircularDependencyError
-    // (notably accountSpecificSettingsProvider).
-    ref.invalidate(sessionProvider);
+    // Session watches [activeAccountIdProvider] and rebuilds on id change.
+    // Only force-invalidate when re-selecting the same account.
+    if (previousId == accountId) {
+      ref.invalidate(sessionProvider);
+    }
   }
 
   Future<void> selectPreferred() async {
