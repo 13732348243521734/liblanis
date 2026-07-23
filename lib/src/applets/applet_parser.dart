@@ -66,8 +66,18 @@ class AppletParser<T> {
     this.ctx,
     this.appletMeta, {
     required this.isConnected,
-  }) {
+  });
+
+  /// Starts periodic refresh. Safe to call repeatedly.
+  void startAutoRefresh() {
+    if (_refreshTimer != null || _controller.isClosed) return;
     _refreshTimer = Timer.periodic(appletMeta.refreshInterval, timerCallback);
+  }
+
+  /// Stops periodic refresh while the applet is off-screen.
+  void stopAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
   }
 
   void timerCallback(Timer timer) async {
@@ -84,7 +94,7 @@ class AppletParser<T> {
   }
 
   void dispose() {
-    _refreshTimer?.cancel();
+    stopAutoRefresh();
     _controller.close();
   }
 
