@@ -78,7 +78,9 @@ class AppletParser<T> {
 
   void addResponse(final FetcherResponse<T> data) {
     _latestResponse = data;
-    _controller.add(data);
+    if (!_controller.isClosed) {
+      _controller.add(data);
+    }
   }
 
   void dispose() {
@@ -123,33 +125,32 @@ class AppletParser<T> {
     if (isEmpty || forceRefresh) {
       addResponse(FetcherResponse(status: FetcherStatus.fetching, error: null));
 
-      _getHome()
-          .then((data) async {
-            addResponse(
-              FetcherResponse<T>(
-                status: FetcherStatus.done,
-                content: data,
-                error: null,
-              ),
-            );
-            isEmpty = false;
-          })
-          .catchError((ex, stack) async {
-            if (!secondTry) {
-              await ctx.session.authenticate();
-              await fetchData(forceRefresh: true, secondTry: true);
-              return;
-            }
-            addResponse(
-              FetcherResponse<T>(
-                status: FetcherStatus.error,
-                error: ExceptionWithStackTrace(
-                  exception: ex,
-                  stackTrace: stack,
-                ),
-              ),
-            );
-          });
+      try {
+        final data = await _getHome();
+        addResponse(
+          FetcherResponse<T>(
+            status: FetcherStatus.done,
+            content: data,
+            error: null,
+          ),
+        );
+        isEmpty = false;
+      } catch (ex, stack) {
+        if (!secondTry) {
+          await ctx.session.authenticate();
+          await fetchData(forceRefresh: true, secondTry: true);
+          return;
+        }
+        addResponse(
+          FetcherResponse<T>(
+            status: FetcherStatus.error,
+            error: ExceptionWithStackTrace(
+              exception: ex,
+              stackTrace: stack,
+            ),
+          ),
+        );
+      }
     }
   }
 

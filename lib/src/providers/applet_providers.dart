@@ -60,6 +60,7 @@ SubstitutionsParser substitutionsParser(Ref ref) {
     ctx,
     isConnected: () => _connected(ref),
   );
+  parser.loadFilterFromStorage();
   ref.onDispose(parser.dispose);
   return parser;
 }
