@@ -84,6 +84,8 @@ class TimetableSubject {
 
 typedef TimetableDay = List<TimetableSubject>;
 
+/// Week plan container. Naming stays `TimeTable` (not `Timetable`) to avoid a
+/// wide rename across app + package; new types should use the `Timetable*` prefix.
 enum TimeTableType { all, own }
 
 class TimeTable {
