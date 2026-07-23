@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../applets/applet_context.dart';
-import '../applets/applet_parser.dart';
 import '../applets/calendar/parser.dart';
 import '../applets/conversations/parser.dart';
 import '../applets/data_storage/parser.dart';
@@ -11,15 +10,6 @@ import '../applets/study_groups/parser.dart';
 import '../applets/substitutions/parser.dart';
 import '../applets/timetable/parser.dart';
 import '../exceptions.dart';
-import '../models/account_types.dart';
-import '../models/calendar_event.dart';
-import '../models/conversations.dart';
-import '../models/datastorage.dart';
-import '../models/lessons.dart';
-import '../models/lessons_teacher.dart';
-import '../models/study_groups.dart';
-import '../models/substitution.dart';
-import '../models/timetable.dart';
 import '../settings/typed_settings.dart';
 import 'core_providers.dart';
 
@@ -125,66 +115,4 @@ StudyGroupsStudentParser studyGroupsParser(Ref ref) {
   );
   ref.onDispose(parser.dispose);
   return parser;
-}
-
-@riverpod
-Future<FetcherResponse<SubstitutionPlan>> substitutions(Ref ref) async {
-  final parser = ref.watch(substitutionsParserProvider);
-  await parser.fetchData(forceRefresh: true);
-  return parser.latestResponse!;
-}
-
-@riverpod
-Future<FetcherResponse<TimeTable>> timetable(Ref ref) async {
-  final parser = ref.watch(timetableParserProvider);
-  await parser.fetchData(forceRefresh: true);
-  return parser.latestResponse!;
-}
-
-@riverpod
-Future<FetcherResponse<List<CalendarEvent>>> calendar(Ref ref) async {
-  final parser = ref.watch(calendarParserProvider);
-  await parser.fetchData(forceRefresh: true);
-  return parser.latestResponse!;
-}
-
-@riverpod
-Future<FetcherResponse<List<OverviewEntry>>> conversations(Ref ref) async {
-  final parser = ref.watch(conversationsParserProvider);
-  await parser.fetchData(forceRefresh: true);
-  return parser.latestResponse!;
-}
-
-@riverpod
-Future<FetcherResponse<Lessons>> lessonsStudent(Ref ref) async {
-  final account = ref.watch(activeAccountProvider);
-  if (account?.accountType == AccountType.teacher) {
-    throw NotSupportedException('Use lessonsTeacher for teacher accounts');
-  }
-  final parser = ref.watch(lessonsStudentParserProvider);
-  await parser.fetchData(forceRefresh: true);
-  return parser.latestResponse!;
-}
-
-@riverpod
-Future<FetcherResponse<LessonsTeacherHome>> lessonsTeacher(Ref ref) async {
-  final parser = ref.watch(lessonsTeacherParserProvider);
-  await parser.fetchData(forceRefresh: true);
-  return parser.latestResponse!;
-}
-
-@riverpod
-Future<FetcherResponse<(List<FileNode>, List<FolderNode>)>> dataStorage(
-  Ref ref,
-) async {
-  final parser = ref.watch(dataStorageParserProvider);
-  await parser.fetchData(forceRefresh: true);
-  return parser.latestResponse!;
-}
-
-@riverpod
-Future<FetcherResponse<StudentStudyGroups>> studyGroups(Ref ref) async {
-  final parser = ref.watch(studyGroupsParserProvider);
-  await parser.fetchData(forceRefresh: true);
-  return parser.latestResponse!;
 }

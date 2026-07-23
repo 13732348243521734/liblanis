@@ -202,7 +202,7 @@ final class AccountsProvider
   Accounts create() => Accounts();
 }
 
-String _$accountsHash() => r'3cf8519e5d30a8031578ab408d741607b2a7ad43';
+String _$accountsHash() => r'476aa21a4818d56dd1daffbcbf4ef2e465fdc8c0';
 
 abstract class _$Accounts extends $AsyncNotifier<List<AccountSummary>> {
   FutureOr<List<AccountSummary>> build();
@@ -323,7 +323,7 @@ final class ActiveAccountProvider
   }
 }
 
-String _$activeAccountHash() => r'e6731c475a55f2c4f7d8810ab088debe7f9a620b';
+String _$activeAccountHash() => r'4ee5f6247507a488e3738a9fe3cd43128ebb4797';
 
 abstract class _$ActiveAccount extends $Notifier<ClearTextAccount?> {
   ClearTextAccount? build();
@@ -368,7 +368,7 @@ final class SessionProvider
   Session create() => Session();
 }
 
-String _$sessionHash() => r'eef004acbd14cc63cfc7a6540af726f9693d9021';
+String _$sessionHash() => r'bae50fa47522c3c18a2c99abadd622dad5edd32f';
 
 abstract class _$Session extends $AsyncNotifier<SessionHandler?> {
   FutureOr<SessionHandler?> build();
@@ -624,4 +624,4 @@ final class SupportedAppletPhpUrlsProvider
 }
 
 String _$supportedAppletPhpUrlsHash() =>
-    r'ad9f65cec2036fed6f8dff9ea20c6f8ce84a77a0';
+    r'389c1df8e74ea31855f6d453c271db4ba61e639a';

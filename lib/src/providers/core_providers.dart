@@ -12,7 +12,6 @@ import '../session/session.dart';
 import '../settings/typed_settings.dart';
 import '../storage/storage_manager.dart';
 import '../applets/definition.dart';
-import 'applet_providers.dart';
 
 part 'core_providers.g.dart';
 
@@ -180,24 +179,6 @@ class ActiveAccount extends _$ActiveAccount {
   void replace(ClearTextAccount account) {
     state = account;
   }
-}
-
-/// Dispose keepAlive applet parsers after an account switch.
-///
-/// Prefer relying on [activeAccountIdProvider] / [sessionProvider] watches.
-/// Only call this when those dependencies alone would leave stale parser
-/// instances (should be rare). Never call from inside a turn that also
-/// updates [activeAccountProvider] — that races with dependents rebuilding.
-void invalidateAppletParsers(Ref ref) {
-  ref.invalidate(appletContextProvider);
-  ref.invalidate(substitutionsParserProvider);
-  ref.invalidate(timetableParserProvider);
-  ref.invalidate(calendarParserProvider);
-  ref.invalidate(conversationsParserProvider);
-  ref.invalidate(lessonsStudentParserProvider);
-  ref.invalidate(lessonsTeacherParserProvider);
-  ref.invalidate(dataStorageParserProvider);
-  ref.invalidate(studyGroupsParserProvider);
 }
 
 @Riverpod(keepAlive: true)
