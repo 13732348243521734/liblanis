@@ -310,7 +310,7 @@ class SessionHandler {
         .singleOrNull;
     if (app == null) return false;
     return applet.supportedAccountTypes.contains(
-      overrideAccountType ?? accountType,
+      overrideAccountType ?? accountTypeOrNull ?? AccountType.student,
     );
   }
 
