@@ -97,6 +97,27 @@ class SessionHandler {
     bool withoutData = false,
     String? withLoginUrl,
   }) async {
+    try {
+      await _authenticate(
+        withoutData: withoutData,
+        withLoginUrl: withLoginUrl,
+      );
+    } on LanisException {
+      rethrow;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw NoConnectionException();
+      }
+      throw UnknownException(e.message ?? e.toString());
+    }
+  }
+
+  Future<void> _authenticate({
+    bool withoutData = false,
+    String? withLoginUrl,
+  }) async {
     if (!(await connectionChecker.connected)) {
       throw NoConnectionException();
     }

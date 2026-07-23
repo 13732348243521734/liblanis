@@ -169,8 +169,9 @@ class ActiveAccount extends _$ActiveAccount {
       } catch (_) {}
     }());
     state = null;
+    // Session watches [activeAccountIdProvider]; do not invalidate session in
+    // the same turn (CircularDependencyError risk).
     ref.read(activeAccountIdProvider.notifier).setId(null);
-    ref.invalidate(sessionProvider);
   }
 
   /// Replace the in-memory account snapshot (e.g. after accountType is known).
