@@ -155,7 +155,7 @@ class ActiveAccount extends _$ActiveAccount {
     final db = ref.read(lanisDatabaseProvider);
     final account = await db.getPreferredStartupAccount();
     if (account == null) {
-      clear();
+      await clear();
       return;
     }
     await select(account.localId);
