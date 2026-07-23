@@ -494,7 +494,9 @@ class LessonsStudentParser extends AppletParser<Lessons> {
       // "0" Unknown error
       // "1" Lanis had a good day
       return response.data;
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } catch (e) {
       throw UnknownException();
@@ -647,7 +649,9 @@ class LessonsStudentParser extends AppletParser<Lessons> {
         "public_files": publicFiles,
         "additional_text": additionalText,
       };
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } catch (e) {
       throw UnknownException();
@@ -711,7 +715,9 @@ class LessonsStudentParser extends AppletParser<Lessons> {
       }
 
       return statusMessages;
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } catch (e) {
       throw UnknownException();

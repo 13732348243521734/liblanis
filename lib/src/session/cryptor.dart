@@ -42,7 +42,9 @@ class Cryptor {
             jsonDecode(response.toString())['publickey'],
           )
           as RSAPublicKey;
-    } on (SocketException, DioException) {
+    } on SocketException {
+      return null;
+    } on DioException {
       return null;
     }
   }
@@ -64,7 +66,9 @@ class Cryptor {
         ),
       );
       return jsonDecode(response.toString())['challenge'];
-    } on (SocketException, DioException) {
+    } on SocketException {
+      return null;
+    } on DioException {
       return null;
     }
   }

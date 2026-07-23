@@ -108,7 +108,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
       );
 
       return bool.parse(response.data);
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } catch (e) {
       throw UnknownException();
@@ -139,7 +141,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
       );
 
       return bool.parse(response.data);
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } catch (e) {
       throw UnknownException();
@@ -285,7 +289,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
         replies: replies,
         msgLastRefresh: encryptedJSON['time'],
       );
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } on LanisException {
       rethrow;
@@ -399,7 +405,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
         success: jsonDecode['back'],
         messageId: jsonDecode['id'],
       );
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } on LanisException {
       rethrow;
@@ -473,7 +481,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
         success: decoded['back'],
         id: decoded['id'],
       ); // "back" should be bool, id is Uniquid
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } on LanisException {
       rethrow;
@@ -509,7 +519,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
       cachedCanChooseType = document.querySelector('#MsgOptions') != null;
 
       return cachedCanChooseType!;
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } catch (e) {
       throw UnknownException();
@@ -557,7 +569,9 @@ class ConversationsParser extends AppletParser<List<OverviewEntry>> {
       }
 
       return [];
-    } on (SocketException, DioException) {
+    } on SocketException {
+      throw NetworkException();
+    } on DioException {
       throw NetworkException();
     } catch (e) {
       throw UnknownException();
