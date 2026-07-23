@@ -107,6 +107,16 @@ class Accounts extends _$Accounts {
   }
 }
 
+/// Identity of the active account. [Session] watches this (not the full
+/// [ClearTextAccount]) so [ActiveAccount.replace] does not tear down dio.
+@Riverpod(keepAlive: true)
+class ActiveAccountId extends _$ActiveAccountId {
+  @override
+  int? build() => null;
+
+  void setId(int? id) => state = id;
+}
+
 @Riverpod(keepAlive: true)
 class ActiveAccount extends _$ActiveAccount {
   @override
@@ -128,6 +138,7 @@ class ActiveAccount extends _$ActiveAccount {
     }
 
     state = account;
+    ref.read(activeAccountIdProvider.notifier).setId(accountId);
     // Force a fresh session + dispose account-scoped providers from the prior account.
     ref.invalidate(sessionProvider);
     invalidateAccountScopedProviders(ref);
@@ -151,11 +162,13 @@ class ActiveAccount extends _$ActiveAccount {
       } catch (_) {}
     }());
     state = null;
+    ref.read(activeAccountIdProvider.notifier).setId(null);
     ref.invalidate(sessionProvider);
     invalidateAccountScopedProviders(ref);
   }
 
   /// Replace the in-memory account snapshot (e.g. after accountType is known).
+  /// Does not change [activeAccountIdProvider], so the live session stays.
   void replace(ClearTextAccount account) {
     state = account;
   }
@@ -182,8 +195,10 @@ void invalidateAccountScopedProviders(Ref ref) {
 class Session extends _$Session {
   @override
   FutureOr<SessionHandler?> build() async {
-    final account = ref.watch(activeAccountProvider);
-    if (account == null) return null;
+    final accountId = ref.watch(activeAccountIdProvider);
+    if (accountId == null) return null;
+    final account = ref.read(activeAccountProvider);
+    if (account == null || account.localId != accountId) return null;
 
     final config = ref.watch(sphConfigProvider);
     final checker = ref.watch(connectionCheckerProvider);
@@ -214,6 +229,7 @@ class Session extends _$Session {
     if (session.account.accountType == null) {
       await db.setAccountType(session.account.localId, session.accountType);
       // Refresh active account snapshot so accountType is visible to UI.
+      // Safe: Session.build watches localId only, so this does not rebuild.
       final updated = await db.getAccount(session.account.localId);
       if (updated != null) {
         ref.read(activeAccountProvider.notifier).replace(updated);

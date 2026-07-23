@@ -228,6 +228,69 @@ abstract class _$Accounts extends $AsyncNotifier<List<AccountSummary>> {
   }
 }
 
+/// Identity of the active account. [Session] watches this (not the full
+/// [ClearTextAccount]) so [ActiveAccount.replace] does not tear down dio.
+
+@ProviderFor(ActiveAccountId)
+const activeAccountIdProvider = ActiveAccountIdProvider._();
+
+/// Identity of the active account. [Session] watches this (not the full
+/// [ClearTextAccount]) so [ActiveAccount.replace] does not tear down dio.
+final class ActiveAccountIdProvider
+    extends $NotifierProvider<ActiveAccountId, int?> {
+  /// Identity of the active account. [Session] watches this (not the full
+  /// [ClearTextAccount]) so [ActiveAccount.replace] does not tear down dio.
+  const ActiveAccountIdProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'activeAccountIdProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activeAccountIdHash();
+
+  @$internal
+  @override
+  ActiveAccountId create() => ActiveAccountId();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(int? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<int?>(value),
+    );
+  }
+}
+
+String _$activeAccountIdHash() => r'8010b04405e01d08389999c6a262d7708d89180b';
+
+/// Identity of the active account. [Session] watches this (not the full
+/// [ClearTextAccount]) so [ActiveAccount.replace] does not tear down dio.
+
+abstract class _$ActiveAccountId extends $Notifier<int?> {
+  int? build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<int?, int?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<int?, int?>,
+              int?,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
 @ProviderFor(ActiveAccount)
 const activeAccountProvider = ActiveAccountProvider._();
 
@@ -260,7 +323,7 @@ final class ActiveAccountProvider
   }
 }
 
-String _$activeAccountHash() => r'5c9e3ead748733cdce50a96b1acde16a79a23e1f';
+String _$activeAccountHash() => r'2974a7c89b840ad402afcecad133290f2b1d6ecd';
 
 abstract class _$ActiveAccount extends $Notifier<ClearTextAccount?> {
   ClearTextAccount? build();
@@ -305,7 +368,7 @@ final class SessionProvider
   Session create() => Session();
 }
 
-String _$sessionHash() => r'f6dbd26fd22f100ba7126c88b0186b54d789ce02';
+String _$sessionHash() => r'214e4ea129b6ece0ba47bea857d946fdb122f7b8';
 
 abstract class _$Session extends $AsyncNotifier<SessionHandler?> {
   FutureOr<SessionHandler?> build();
