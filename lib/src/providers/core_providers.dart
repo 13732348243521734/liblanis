@@ -88,7 +88,7 @@ class Accounts extends _$Accounts {
     final active = ref.read(activeAccountProvider);
     await db.deleteAccount(id);
     if (active?.localId == id) {
-      ref.read(activeAccountProvider.notifier).clear();
+      await ref.read(activeAccountProvider.notifier).clear();
     }
     ref.invalidateSelf();
   }
@@ -161,13 +161,14 @@ class ActiveAccount extends _$ActiveAccount {
     await select(account.localId);
   }
 
-  void clear() {
+  /// Clears the active account. Awaits logout HTTP before dropping the session.
+  Future<void> clear({bool skipDeauthenticate = false}) async {
     final oldSession = ref.read(sessionProvider).asData?.value;
-    unawaited(() async {
+    if (!skipDeauthenticate && oldSession != null) {
       try {
-        await oldSession?.deAuthenticate();
+        await oldSession.deAuthenticate();
       } catch (_) {}
-    }());
+    }
     state = null;
     // Session watches [activeAccountIdProvider]; do not invalidate session in
     // the same turn (CircularDependencyError risk).
@@ -235,12 +236,15 @@ class Session extends _$Session {
     final db = ref.read(lanisDatabaseProvider);
     await db.updateLastLogin(session.account.localId);
     if (session.account.accountType == null) {
-      await db.setAccountType(session.account.localId, session.accountType);
-      // Refresh active account snapshot so accountType is visible to UI.
-      // Safe: Session.build watches localId only, so this does not rebuild.
-      final updated = await db.getAccount(session.account.localId);
-      if (updated != null) {
-        ref.read(activeAccountProvider.notifier).replace(updated);
+      final detectedType = session.accountTypeOrNull;
+      if (detectedType != null) {
+        await db.setAccountType(session.account.localId, detectedType);
+        // Refresh active account snapshot so accountType is visible to UI.
+        // Safe: Session.build watches localId only, so this does not rebuild.
+        final updated = await db.getAccount(session.account.localId);
+        if (updated != null) {
+          ref.read(activeAccountProvider.notifier).replace(updated);
+        }
       }
     }
     // Notify listeners: travelMenu / accountType are mutated on [session].

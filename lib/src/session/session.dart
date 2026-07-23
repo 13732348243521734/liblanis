@@ -32,7 +32,9 @@ class SessionHandler {
   AccountType? _accountType;
   List<dynamic> travelMenu = [];
 
-  AccountType get accountType => _accountType ?? account.accountType!;
+  AccountType? get accountTypeOrNull => _accountType ?? account.accountType;
+
+  AccountType get accountType => accountTypeOrNull!;
 
   SessionHandler({
     required this.account,
