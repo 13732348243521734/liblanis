@@ -11,6 +11,8 @@ import '../models/account_types.dart';
 import '../session/session.dart';
 import '../settings/typed_settings.dart';
 import '../storage/storage_manager.dart';
+import '../applets/definition.dart';
+import 'applet_providers.dart';
 
 part 'core_providers.g.dart';
 
@@ -43,7 +45,6 @@ ConnectionChecker connectionChecker(Ref ref) {
 @Riverpod(keepAlive: true)
 Stream<ConnectionStatus> connectionStatus(Ref ref) {
   final checker = ref.watch(connectionCheckerProvider);
-  // Emit current status immediately, then follow the stream.
   return Stream.multi((controller) async {
     controller.add(checker.status);
     final sub = checker.statusStream.listen(
@@ -117,26 +118,64 @@ class ActiveAccount extends _$ActiveAccount {
     if (account == null) {
       throw UnknownException('Account $accountId not found');
     }
-    // Dispose previous session if any.
-    ref.invalidate(sessionProvider);
+
+    final previous = state;
+    if (previous != null && previous.localId != accountId) {
+      final oldSession = ref.read(sessionProvider).asData?.value;
+      try {
+        await oldSession?.deAuthenticate();
+      } catch (_) {}
+    }
+
     state = account;
+    // Force a fresh session + dispose account-scoped providers from the prior account.
+    ref.invalidate(sessionProvider);
+    invalidateAccountScopedProviders(ref);
   }
 
   Future<void> selectPreferred() async {
     final db = ref.read(lanisDatabaseProvider);
     final account = await db.getPreferredStartupAccount();
     if (account == null) {
-      state = null;
+      clear();
       return;
     }
-    ref.invalidate(sessionProvider);
-    state = account;
+    await select(account.localId);
   }
 
   void clear() {
-    ref.invalidate(sessionProvider);
+    final oldSession = ref.read(sessionProvider).asData?.value;
+    unawaited(() async {
+      try {
+        await oldSession?.deAuthenticate();
+      } catch (_) {}
+    }());
     state = null;
+    ref.invalidate(sessionProvider);
+    invalidateAccountScopedProviders(ref);
   }
+
+  /// Replace the in-memory account snapshot (e.g. after accountType is known).
+  void replace(ClearTextAccount account) {
+    state = account;
+  }
+}
+
+/// Providers that must not leak data across account switches.
+void invalidateAccountScopedProviders(Ref ref) {
+  ref.invalidate(accountSpecificSettingsProvider);
+  ref.invalidate(storageManagerProvider);
+  ref.invalidate(supportedAppletPhpUrlsProvider);
+  // Applet keepAlive parsers hold SessionHandler / account settings.
+  ref.invalidate(appletContextProvider);
+  ref.invalidate(substitutionsParserProvider);
+  ref.invalidate(timetableParserProvider);
+  ref.invalidate(calendarParserProvider);
+  ref.invalidate(conversationsParserProvider);
+  ref.invalidate(lessonsStudentParserProvider);
+  ref.invalidate(lessonsTeacherParserProvider);
+  ref.invalidate(dataStorageParserProvider);
+  ref.invalidate(studyGroupsParserProvider);
 }
 
 @Riverpod(keepAlive: true)
@@ -174,17 +213,25 @@ class Session extends _$Session {
     await db.updateLastLogin(session.account.localId);
     if (session.account.accountType == null) {
       await db.setAccountType(session.account.localId, session.accountType);
-      await ref
-          .read(activeAccountProvider.notifier)
-          .select(session.account.localId);
+      // Refresh active account snapshot so accountType is visible to UI.
+      final updated = await db.getAccount(session.account.localId);
+      if (updated != null) {
+        ref.read(activeAccountProvider.notifier).replace(updated);
+      }
     }
+    // Notify listeners: travelMenu / accountType are mutated on [session].
+    state = AsyncData(session);
     ref.invalidate(accountsProvider);
+    ref.invalidate(supportedAppletPhpUrlsProvider);
     return session;
   }
 
   Future<void> deAuthenticate() async {
     final session = await future;
     await session?.deAuthenticate();
+    if (session != null) {
+      state = AsyncData(session);
+    }
   }
 }
 
@@ -219,4 +266,19 @@ StorageManager? storageManager(Ref ref) {
     config: config,
     accountId: account.localId,
   );
+}
+
+/// PHP applet URLs supported by the current authenticated session + account type.
+@Riverpod(keepAlive: true)
+Set<String> supportedAppletPhpUrls(Ref ref) {
+  final session = ref.watch(sessionProvider).asData?.value;
+  final account = ref.watch(activeAccountProvider);
+  if (session == null || account == null) return const {};
+
+  final type = session.account.accountType ?? account.accountType;
+  return {
+    for (final applet in Applets.all)
+      if (session.doesSupportFeature(applet, overrideAccountType: type))
+        applet.appletPhpUrl,
+  };
 }

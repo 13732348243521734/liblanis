@@ -8,13 +8,20 @@ part of 'applet_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Builds only when [sessionProvider] has a ready [SessionHandler].
+/// Invalidated on account switch via [invalidateAccountScopedProviders].
 
 @ProviderFor(appletContext)
 const appletContextProvider = AppletContextProvider._();
 
+/// Builds only when [sessionProvider] has a ready [SessionHandler].
+/// Invalidated on account switch via [invalidateAccountScopedProviders].
+
 final class AppletContextProvider
     extends $FunctionalProvider<AppletContext, AppletContext, AppletContext>
     with $Provider<AppletContext> {
+  /// Builds only when [sessionProvider] has a ready [SessionHandler].
+  /// Invalidated on account switch via [invalidateAccountScopedProviders].
   const AppletContextProvider._()
     : super(
         from: null,
@@ -48,7 +55,7 @@ final class AppletContextProvider
   }
 }
 
-String _$appletContextHash() => r'8f3f6097af264a2025868201afff57a96b27e31b';
+String _$appletContextHash() => r'543e791c9aa3d9ed60d87fd0c56a5b4c6a7963a9';
 
 @ProviderFor(substitutionsParser)
 const substitutionsParserProvider = SubstitutionsParserProvider._();
@@ -424,12 +431,8 @@ final class StudyGroupsParserProvider
 
 String _$studyGroupsParserHash() => r'2de96ddc09376d2ea33582f371e195539166f0d6';
 
-/// Convenience: fetch substitution plan (online or offline cache).
-
 @ProviderFor(substitutions)
 const substitutionsProvider = SubstitutionsProvider._();
-
-/// Convenience: fetch substitution plan (online or offline cache).
 
 final class SubstitutionsProvider
     extends
@@ -441,7 +444,6 @@ final class SubstitutionsProvider
     with
         $FutureModifier<FetcherResponse<SubstitutionPlan>>,
         $FutureProvider<FetcherResponse<SubstitutionPlan>> {
-  /// Convenience: fetch substitution plan (online or offline cache).
   const SubstitutionsProvider._()
     : super(
         from: null,

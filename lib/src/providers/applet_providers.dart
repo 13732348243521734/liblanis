@@ -25,11 +25,12 @@ import 'core_providers.dart';
 
 part 'applet_providers.g.dart';
 
+/// Builds only when [sessionProvider] has a ready [SessionHandler].
+/// Invalidated on account switch via [invalidateAccountScopedProviders].
 @Riverpod(keepAlive: true)
 AppletContext appletContext(Ref ref) {
   final account = ref.watch(activeAccountProvider);
-  final sessionAsync = ref.watch(sessionProvider);
-  final session = sessionAsync.asData?.value;
+  final session = ref.watch(sessionProvider).asData?.value;
   if (account == null || session == null) {
     throw ConfigurationException(
       'AppletContext requires an active authenticated session',
@@ -120,7 +121,6 @@ StudyGroupsStudentParser studyGroupsParser(Ref ref) {
   return parser;
 }
 
-/// Convenience: fetch substitution plan (online or offline cache).
 @riverpod
 Future<FetcherResponse<SubstitutionPlan>> substitutions(Ref ref) async {
   final parser = ref.watch(substitutionsParserProvider);

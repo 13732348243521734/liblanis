@@ -260,7 +260,7 @@ final class ActiveAccountProvider
   }
 }
 
-String _$activeAccountHash() => r'e6551d245d047dd069987d60508b4cb8148ab5d7';
+String _$activeAccountHash() => r'5c9e3ead748733cdce50a96b1acde16a79a23e1f';
 
 abstract class _$ActiveAccount extends $Notifier<ClearTextAccount?> {
   ClearTextAccount? build();
@@ -305,7 +305,7 @@ final class SessionProvider
   Session create() => Session();
 }
 
-String _$sessionHash() => r'51e7d289a87403faf54255d8d42387ecc8c29d3c';
+String _$sessionHash() => r'f6dbd26fd22f100ba7126c88b0186b54d789ce02';
 
 abstract class _$Session extends $AsyncNotifier<SessionHandler?> {
   FutureOr<SessionHandler?> build();
@@ -451,3 +451,50 @@ final class StorageManagerProvider
 }
 
 String _$storageManagerHash() => r'73ba613f27ceb2b371cc567e7375e5f17f0cf6d5';
+
+/// PHP applet URLs supported by the current authenticated session + account type.
+
+@ProviderFor(supportedAppletPhpUrls)
+const supportedAppletPhpUrlsProvider = SupportedAppletPhpUrlsProvider._();
+
+/// PHP applet URLs supported by the current authenticated session + account type.
+
+final class SupportedAppletPhpUrlsProvider
+    extends $FunctionalProvider<Set<String>, Set<String>, Set<String>>
+    with $Provider<Set<String>> {
+  /// PHP applet URLs supported by the current authenticated session + account type.
+  const SupportedAppletPhpUrlsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'supportedAppletPhpUrlsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$supportedAppletPhpUrlsHash();
+
+  @$internal
+  @override
+  $ProviderElement<Set<String>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  Set<String> create(Ref ref) {
+    return supportedAppletPhpUrls(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Set<String> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Set<String>>(value),
+    );
+  }
+}
+
+String _$supportedAppletPhpUrlsHash() =>
+    r'c789e5f18551bf56ff2f03df19aa2cda4ab47943';
