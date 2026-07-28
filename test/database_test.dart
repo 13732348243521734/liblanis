@@ -74,6 +74,9 @@ void main() {
       expect(shared.getString('theme'), 'dark');
       expect(shared.getBool('notifications-allow'), isTrue);
       expect(shared.getInt('interval'), 15);
+      expect(shared.getBool('theme'), isNull);
+      shared.setString('legacy-false', 'false');
+      expect(shared.getBool('legacy-false'), isFalse);
 
       final id = await db.addAccount(
         schoolId: 2,

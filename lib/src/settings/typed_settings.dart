@@ -46,7 +46,12 @@ class TypedSettings {
   bool? getBool(String key) {
     final v = LanisDatabase.decodeValue(_read(key));
     if (v is bool) return v;
-    if (v is String) return v == 'true';
+    if (v is String) {
+      if (v == 'true') return true;
+      if (v == 'false') return false;
+      // Do not coerce arbitrary strings (e.g. Map.toString()) to false.
+      return null;
+    }
     return null;
   }
 
