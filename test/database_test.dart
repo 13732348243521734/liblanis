@@ -115,5 +115,56 @@ void main() {
       expect(listed, hasLength(1));
       expect(listed.first.appletId, 'vertretungsplan.php');
     });
+
+    test('delete offline data and clear setting keys', () async {
+      final id = await db.addAccount(
+        schoolId: 4,
+        schoolName: 'D',
+        username: 'w',
+        password: 'pw',
+      );
+      db.setAppletOfflineData(
+        accountId: id,
+        appletId: 'kalender.php',
+        json: '{"events":[]}',
+      );
+      db.deleteAppletOfflineData(accountId: id, appletId: 'kalender.php');
+      expect(
+        db.getAppletOfflineData(accountId: id, appletId: 'kalender.php'),
+        isNull,
+      );
+
+      final shared = TypedSettings.shared(db);
+      shared.setString('tmp', 'x');
+      shared.setString('tmp', null);
+      expect(shared.getString('tmp'), isNull);
+    });
+
+    test('listAppletOfflineData across accounts', () async {
+      final a = await db.addAccount(
+        schoolId: 5,
+        schoolName: 'E',
+        username: 'a',
+        password: 'pw',
+      );
+      final b = await db.addAccount(
+        schoolId: 6,
+        schoolName: 'F',
+        username: 'b',
+        password: 'pw',
+      );
+      db.setAppletOfflineData(
+        accountId: a,
+        appletId: 'vertretungsplan.php',
+        json: '{}',
+      );
+      db.setAppletOfflineData(
+        accountId: b,
+        appletId: 'nachrichten.php',
+        json: '{}',
+      );
+      expect(db.listAppletOfflineData(), hasLength(2));
+      expect(db.listAppletOfflineData(accountId: a), hasLength(1));
+    });
   });
 }

@@ -129,4 +129,22 @@ void main() {
     final storage = container.read(storageManagerProvider);
     expect(storage, isNotNull);
   });
+
+  test('clear active account leaves providers usable', () async {
+    final overrides = LanisClient.configure();
+    final container = ProviderContainer(overrides: overrides);
+    addTearDown(container.dispose);
+
+    final id = await container.read(accountsProvider.notifier).add(
+      schoolId: 9,
+      schoolName: 'Z',
+      username: 'z',
+      password: 'p',
+    );
+    await container.read(activeAccountProvider.notifier).select(id);
+    await container.read(activeAccountProvider.notifier).clear();
+    expect(container.read(activeAccountProvider), isNull);
+    expect(container.read(accountSpecificSettingsProvider), isNull);
+    expect(await container.read(accountsProvider.future), hasLength(1));
+  });
 }
