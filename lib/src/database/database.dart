@@ -77,7 +77,7 @@ class LanisDatabase {
     ''');
   }
 
-  void dispose() => _db.dispose();
+  void dispose() => _db.close();
 
   // —— Accounts ——
 
