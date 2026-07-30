@@ -2,6 +2,17 @@ import 'package:dio/dio.dart';
 
 import 'secret_store.dart';
 
+/// Host-supplied hook for unexpected applet fetch failures.
+///
+/// Invoked by [AppletParser] after a failed re-auth retry for
+/// [UnknownException] and non-[LanisException] errors. liblanis never
+/// depends on Sentry; the host wires this to its reporter.
+typedef UnexpectedErrorHandler = void Function(
+  Object error,
+  StackTrace stackTrace, {
+  required String appletPhpUrl,
+});
+
 /// Immutable configuration produced by [LanisClient.configure].
 class LanisConfig {
   /// Absolute path to the sqlite DB file, or null for in-memory.
@@ -28,6 +39,9 @@ class LanisConfig {
   /// Optional max total cache size in bytes; null means unlimited.
   final int? storageMaxBytes;
 
+  /// Optional host callback for unexpected [AppletParser.fetchData] failures.
+  final UnexpectedErrorHandler? onUnexpectedError;
+
   const LanisConfig({
     this.databasePath,
     this.secretStore,
@@ -37,6 +51,7 @@ class LanisConfig {
     this.storageEnabled = true,
     this.storageMaxAge,
     this.storageMaxBytes,
+    this.onUnexpectedError,
   });
 
   LanisConfig copyWith({
@@ -48,6 +63,7 @@ class LanisConfig {
     bool? storageEnabled,
     Duration? storageMaxAge,
     int? storageMaxBytes,
+    UnexpectedErrorHandler? onUnexpectedError,
   }) {
     return LanisConfig(
       databasePath: databasePath ?? this.databasePath,
@@ -59,6 +75,7 @@ class LanisConfig {
       storageEnabled: storageEnabled ?? this.storageEnabled,
       storageMaxAge: storageMaxAge ?? this.storageMaxAge,
       storageMaxBytes: storageMaxBytes ?? this.storageMaxBytes,
+      onUnexpectedError: onUnexpectedError ?? this.onUnexpectedError,
     );
   }
 }

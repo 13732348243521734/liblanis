@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../exceptions.dart';
+import '../lanis_client.dart';
 import 'applet_context.dart';
 import 'definition.dart';
 
@@ -151,6 +153,7 @@ class AppletParser<T> {
           await fetchData(forceRefresh: true, secondTry: true);
           return;
         }
+        _reportUnexpectedError(ex, stack);
         addResponse(
           FetcherResponse<T>(
             status: FetcherStatus.error,
@@ -161,6 +164,21 @@ class AppletParser<T> {
           ),
         );
       }
+    }
+  }
+
+  void _reportUnexpectedError(Object error, StackTrace stackTrace) {
+    if (!isUnexpectedParserError(error)) return;
+    final handler = LanisClient.config?.onUnexpectedError;
+    if (handler == null) return;
+    try {
+      handler(
+        error,
+        stackTrace,
+        appletPhpUrl: appletMeta.appletPhpUrl,
+      );
+    } catch (_) {
+      // Host reporter must never break the fetch stream.
     }
   }
 

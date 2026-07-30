@@ -37,6 +37,7 @@ class LanisClient {
   /// - [secretStore] required when [databasePath] is set
   /// - [documentCacheDirectory] required to use downloads
   /// - [httpAdapter] optional (e.g. Cronet from Flutter)
+  /// - [onUnexpectedError] optional host reporter for unexpected applet fetch failures
   static List<Override> configure({
     String? databasePath,
     SecretStore? secretStore,
@@ -46,6 +47,7 @@ class LanisClient {
     bool storageEnabled = true,
     Duration? storageMaxAge,
     int? storageMaxBytes,
+    UnexpectedErrorHandler? onUnexpectedError,
   }) {
     if (databasePath != null && secretStore == null) {
       throw ConfigurationException(
@@ -62,6 +64,7 @@ class LanisClient {
       storageEnabled: storageEnabled,
       storageMaxAge: storageMaxAge,
       storageMaxBytes: storageMaxBytes,
+      onUnexpectedError: onUnexpectedError,
     );
 
     _config = cfg;
