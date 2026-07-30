@@ -1,3 +1,11 @@
+/// Whether [error] should be forwarded to [LanisConfig.onUnexpectedError].
+///
+/// True for [UnknownException] and any non-[LanisException] (parse/runtime
+/// crashes). Typed SPH/client exceptions (network, auth, offline, …) are
+/// expected and not reported.
+bool isUnexpectedParserError(Object error) =>
+    error is UnknownException || error is! LanisException;
+
 /// Base exception for SPH / Lanis client errors.
 ///
 /// Messages are static English only. Host apps should map types to l10n.
