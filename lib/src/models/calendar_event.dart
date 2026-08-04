@@ -47,32 +47,68 @@ class CalendarEvent {
     Map<String, dynamic> json,
     List<CalendarEventCategory> categories,
   ) {
-    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
     final int? categoryId = int.tryParse('${json['category']}');
-    CalendarEventCategory? parsedCategory = categories
+    final CalendarEventCategory? parsedCategory = categories
         .where((element) => element.id == categoryId)
         .firstOrNull;
+
+    // Prefer SPH's German fields; fall back to FullCalendar ISO `start`/`end`
+    // which the same payload already includes.
+    final startTime =
+        _parseSphDate(json['Anfang']) ?? _parseSphDate(json['start']);
+    final endTime =
+        _parseSphDate(json['Ende']) ?? _parseSphDate(json['end']);
+    if (startTime == null || endTime == null) {
+      throw FormatException(
+        'Calendar event missing parseable start/end',
+        json['Id'],
+      );
+    }
+
     return CalendarEvent(
-      startTime: formatter.parse(json['Anfang']),
-      endTime: formatter.parse(json['Ende']),
+      startTime: startTime,
+      endTime: endTime,
       fremdUID: json['FremdUID'],
       lerngruppe: json['Lerngruppe'],
       secret: json['Geheim'] != 'nein',
-      id: json['Id'],
-      schoolID: json['Institution'],
-      lastModified: json['LetzteAenderung'] != null
-          ? formatter.parse(json['LetzteAenderung'])
-          : null,
+      id: '${json['Id'] ?? ''}',
+      schoolID: json['Institution']?.toString(),
+      lastModified: _parseSphDate(json['LetzteAenderung']),
       isNew: json['Neu'] != 'nein',
       public: json['Oeffentlich'] != 'nein',
-      place: json['Ort'],
+      place: json['Ort']?.toString(),
       private: json['Privat'] != 'nein',
-      responsibleID: json['Verantwortlich'],
-      allDay: json['allDay'] ?? false,
+      responsibleID: json['Verantwortlich']?.toString(),
+      allDay: json['allDay'] == true || json['allDay'] == 'true',
       category: parsedCategory,
-      description: json['description'] ?? '',
-      title: json['title'] ?? '',
+      description: '${json['description'] ?? ''}',
+      title: '${json['title'] ?? ''}',
     );
+  }
+
+  static DateTime? _parseSphDate(dynamic value) {
+    if (value == null) return null;
+    final raw = '$value'.trim();
+    if (raw.isEmpty || raw == 'null') return null;
+
+    final formats = <DateFormat>[
+      DateFormat('yyyy-MM-dd HH:mm:ss'),
+      DateFormat('dd.MM.yyyy HH:mm:ss'),
+      DateFormat('dd.MM.yyyy HH:mm'),
+      DateFormat('yyyy-MM-dd'),
+    ];
+    for (final format in formats) {
+      try {
+        return format.parse(raw);
+      } catch (_) {}
+    }
+
+    // FullCalendar ISO timestamps, e.g. 2026-08-08T10:00:00+02:00
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {
+      return null;
+    }
   }
 }
 

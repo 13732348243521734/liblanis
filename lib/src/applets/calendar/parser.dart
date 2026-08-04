@@ -29,52 +29,114 @@ class CalendarParser extends AppletParser<List<CalendarEvent>> {
     );
   }
 
+  /// Extract categories from kalender.php HTML.
+  ///
+  /// Tolerates missing `groups` markers and odd color values so a usable
+  /// category list (or an empty one) is returned whenever the page is readable.
+  static List<CalendarEventCategory> parseCategoriesHtml(String html) {
+    final categories = <CalendarEventCategory>[];
+    final pushRe = RegExp(r'categories\.push\(\s*(\{[^}]+\})\s*\)');
+    for (final match in pushRe.allMatches(html)) {
+      try {
+        final trueJson = match
+            .group(1)!
+            .replaceAllMapped(RegExp(r'(\w+):'), (m) => '"${m[1]}":')
+            .replaceAll("'", '"');
+        final category = jsonDecode(trueJson) as Map<String, dynamic>;
+        final id = category['id'];
+        final idInt = id is int ? id : int.tryParse('$id');
+        if (idInt == null) continue;
+        categories.add(
+          CalendarEventCategory(
+            id: idInt,
+            colorArgb: _parseCategoryColor(category['color']),
+            name: '${category['name'] ?? ''}',
+          ),
+        );
+      } catch (_) {
+        // Skip a single malformed push line; keep the rest.
+      }
+    }
+    return categories;
+  }
+
+  /// Parse the getEvents JSON body into [CalendarEvent]s.
+  ///
+  /// Throws [FormatException] / [TypeError] when the body is not a JSON list
+  /// (auth HTML, error objects, …) — those stay for the caller's global path.
+  /// Individual unreadable rows are skipped so one bad event does not wipe the
+  /// whole calendar.
+  static List<CalendarEvent> parseEventsJson(
+    String body,
+    List<CalendarEventCategory> categories,
+  ) {
+    final data = jsonDecode(body);
+    if (data is! List) {
+      throw FormatException(
+        'getEvents response is not a JSON list',
+        body.length > 80 ? '${body.substring(0, 80)}…' : body,
+      );
+    }
+
+    final events = <CalendarEvent>[];
+    for (final item in data) {
+      if (item is! Map) continue;
+      try {
+        events.add(
+          CalendarEvent.fromLanisJson(
+            Map<String, dynamic>.from(item),
+            categories,
+          ),
+        );
+      } catch (_) {
+        // Skip unreadable rows; keep the rest of the calendar.
+      }
+    }
+    return events;
+  }
+
+  static int _parseCategoryColor(dynamic color) {
+    const fallback = 0xFF4242FC;
+    if (color is! String || color.isEmpty) return fallback;
+
+    var hex = color.trim();
+    if (hex.startsWith('#')) hex = hex.substring(1);
+
+    // Expand #RGB → #RRGGBB (SPH occasionally emits short colors).
+    if (hex.length == 3 && RegExp(r'^[0-9a-fA-F]{3}$').hasMatch(hex)) {
+      hex = hex.split('').map((c) => '$c$c').join();
+    }
+
+    if (hex.length != 6 || !RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(hex)) {
+      return fallback;
+    }
+    return int.parse(hex, radix: 16) + 0xFF000000;
+  }
+
   Future<List<CalendarEvent>> getCalendar({
     required DateTime startDate,
     required DateTime endDate,
     String searchQuery = '',
   }) async {
     final formatter = DateFormat('yyyy-MM-dd');
+    final start = formatter.format(startDate);
+    final end = formatter.format(endDate);
 
     try {
-      List<CalendarEventCategory> categories = [];
-
       final docResponse = await ctx.session.dio.get(
         'https://start.schulportal.hessen.de/kalender.php',
       );
-      final lines = docResponse.data
-          .split('var categories = new Array();')[1]
-          .split('var groups = new Array();')[0]
-          .split('\n');
-      for (String line in lines) {
-        final match = RegExp(r'\{.*\}').firstMatch(line);
-        if (match == null) continue;
-        String trueJson = match
-            .group(0)!
-            .replaceAllMapped(RegExp(r'(\w+):'), (m) => '"${m[1]}":')
-            .replaceAll("'", '"');
-        final category = jsonDecode(trueJson);
-        final colorArgb =
-            int.parse(category['color'].substring(1, 7), radix: 16) +
-            0xFF000000;
-        categories.add(
-          CalendarEventCategory(
-            id: category['id'],
-            colorArgb: colorArgb,
-            name: category['name'],
-          ),
-        );
-      }
+      final categories = parseCategoriesHtml('${docResponse.data}');
 
       final response = await ctx.session.dio.post(
         'https://start.schulportal.hessen.de/kalender.php',
         queryParameters: {
           'f': 'getEvents',
           's': searchQuery,
-          'start': formatter.format(startDate),
-          'end': formatter.format(endDate),
+          'start': start,
+          'end': end,
         },
-        data: 'f=getEvents&start=$startDate&end=$endDate&s=$searchQuery',
+        data: 'f=getEvents&start=$start&end=$end&s=$searchQuery',
         options: Options(
           headers: {
             'Accept': '*/*',
@@ -85,13 +147,8 @@ class CalendarParser extends AppletParser<List<CalendarEvent>> {
           },
         ),
       );
-      final data = jsonDecode(response.data);
-      List<CalendarEvent> finalData = [];
-      for (int i = 0; i < (data as List<dynamic>).length; i++) {
-        finalData.add(CalendarEvent.fromLanisJson(data[i], categories));
-      }
 
-      return finalData;
+      return parseEventsJson('${response.data}', categories);
     } on SocketException {
       throw NetworkException();
     } catch (e) {
@@ -118,10 +175,11 @@ class CalendarParser extends AppletParser<List<CalendarEvent>> {
           },
         ),
       );
-      final data = jsonDecode(response.toString());
+      final data = jsonDecode('${response.data}');
+      if (data is! Map) return null;
       if (data['id'] == '' || data['id'] == null) return null;
 
-      return data;
+      return Map<String, dynamic>.from(data);
     } on SocketException {
       throw NetworkException();
     } catch (e) {
