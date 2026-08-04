@@ -15,6 +15,7 @@ Riverpod-backed multi-account API, optional unified `sqlite3` persistence, injec
 - Offline applet snapshots table (substitutions & timetable write in v1; API is generic)
 - `connectionStatusProvider` for SPH reachability
 - Configurable `StorageManager` (caller supplies cache directory)
+- **`EasyLanisClient`** — imperative API without Riverpod (scripts, CI, other Dart projects)
 
 ## Install
 
@@ -127,6 +128,112 @@ if (storage != null) {
 ```
 
 Calling download APIs without `documentCacheDirectory` throws `StorageNotConfiguredException`.
+
+## Easy client (no Riverpod)
+
+For scripts, integration tests, or other Dart projects that do not use Riverpod, import `package:liblanis/easy_client.dart` instead of `liblanis.dart`. No `ProviderScope` or code generation required.
+
+### In-memory (tests, quick scripts)
+
+```dart
+import 'package:liblanis/easy_client.dart';
+
+Future<void> main() async {
+  final client = EasyLanisClient.inMemory();
+
+  final id = await client.accounts.add(
+    schoolId: 5151,
+    username: 'student.user',
+    password: r'...',
+  );
+
+  await client.login(accountId: id);
+
+  // Direct parser call
+  final plan = await client.parsers.substitutions.getHome();
+
+  // Cached fetch with offline fallback (same as AppletParser.fetchData)
+  final response = await client.parsers.calendar.fetch(forceRefresh: true);
+  if (response.contentStatus == ContentStatus.offline) {
+    // using cached events
+  }
+
+  client.connection.onStatusChanged.listen((status) {
+    // ConnectionStatus.connected / disconnected
+  });
+
+  await client.logout();
+  await client.dispose();
+}
+```
+
+### Persistent file database (CLI tools)
+
+```dart
+final client = EasyLanisClient.open(
+  databasePath: '/path/to/lanis.db',
+  secretStore: MySecureStore(), // required for file DB
+  documentCacheDirectory: '/path/to/cache',
+  userAgent: 'my-tool/1.0',
+);
+
+final id = await client.accounts.add(/* ... */);
+await client.login(accountId: id);
+
+final storage = client.storage;
+if (storage != null) {
+  final path = await storage.downloadFile(url, filename);
+}
+
+await client.dispose();
+```
+
+### Ephemeral credentials (CI smoke tests)
+
+Use when you do not want to persist accounts — credentials are held in memory only:
+
+```dart
+final client = EasyLanisClient.ephemeral(
+  schoolId: 5151,
+  username: 'student.user',
+  password: r'...',
+);
+
+await client.login(); // no accountId — uses ephemeral credentials
+
+final inbox = await client.parsers.conversations.getHome();
+print('Supported applets: ${client.supportedApplets}');
+
+await client.dispose();
+```
+
+### Validate credentials without saving
+
+```dart
+final loginUrl = await client.accounts.validateCredentials(
+  schoolId: 5151,
+  username: 'student.user',
+  password: r'...',
+);
+await client.login(accountId: id, loginUrl: loginUrl);
+```
+
+### Available parsers
+
+Access via `client.parsers` after login:
+
+| Getter | Applet |
+|--------|--------|
+| `substitutions` | Vertretungsplan |
+| `timetable` | Stundenplan (student) |
+| `calendar` | Kalender |
+| `conversations` | Nachrichten |
+| `lessonsStudent` | Mein Unterricht (student) |
+| `lessonsTeacher` | Mein Unterricht (teacher) |
+| `dataStorage` | Dateispeicher |
+| `studyGroups` | Lerngruppen |
+
+Generic access for smoke tests: `client.parsers.forApplet('kalender.php')`.
 
 ## Configuration rules
 
