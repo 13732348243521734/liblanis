@@ -1,0 +1,5 @@
+Id;Art;Lehrkraftkürzel;Fach;Kurs;Raum;Wochentag;Stunde;Woche;Klassen
+19_minimal_own_plan_signal-0;Stunde;lernsys;Bio;1-;RM19-0;1;1;;1
+19_minimal_own_plan_signal-1;Stunde;lernsys;Ch;1-;RM19-1;1;2;;1
+19_minimal_own_plan_signal-2;Stunde;lernsys;D;1-;RM19-2;2;1+2;;1
+19_minimal_own_plan_signal-3;Stunde;lernsys;E;1-D;RM19-3;3;3;;2

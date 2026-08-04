@@ -15,3 +15,13 @@ doc/api/
 
 # OS
 .DS_Store
+
+# Local credentials (never commit)
+*.env
+.adminaccount.env
+.studentaccount.env
+.credentials.env
+
+# Per-applet tooling: ephemeral scrape dumps + resume state
+tool/*/discovery/
+tool/*/run/

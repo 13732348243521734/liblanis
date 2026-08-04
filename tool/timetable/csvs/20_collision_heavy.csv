@@ -1,0 +1,13 @@
+Id;Art;Lehrkraftkürzel;Fach;Kurs;Raum;Wochentag;Stunde;Woche;Klassen
+20_collision_heavy-0;Stunde;lernsys;Bio;1-;RM20-0;1;1+2;A;1
+20_collision_heavy-1;Stunde;lernsys;Ch;1-D;RM20-1;1;2+3;B;1
+20_collision_heavy-2;Stunde;lernsys;D;1-M;RM20-2;1;1+2;;1
+20_collision_heavy-3;Stunde;lernsys;E;2-;RM20-3;1;2+3;A;1
+20_collision_heavy-4;Stunde;lernsys;Ge;2-D;RM20-4;1;1+2;B;1
+20_collision_heavy-5;Stunde;lernsys;Ku;2-M;RM20-5;1;2+3;;1
+20_collision_heavy-6;Stunde;lernsys;M;3-;RM20-6;1;1+2;A;1
+20_collision_heavy-7;Stunde;lernsys;Mu;3-D;RM20-7;1;2+3;B;1
+20_collision_heavy-8;Stunde;lernsys;D;1-;RM20-8;2;1-4;;1
+20_collision_heavy-9;Stunde;lernsys;E;1-;RM20-9;3;1-4;;1
+20_collision_heavy-10;Stunde;lernsys;Ge;1-;RM20-10;4;1-4;;1
+20_collision_heavy-11;Stunde;lernsys;Ku;1-;RM20-11;5;1-4;;1

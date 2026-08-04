@@ -26,30 +26,38 @@ class TimetableStudentParser extends AppletParser<TimeTable> {
   Future<TimeTable> getHome() async {
     final Document? document = await getTimetableDocument();
     if (document == null) throw NetworkException();
+    return parseDocument(document);
+  }
 
-    final tbodyAll = await getTableBody(
-      document,
-      timeTableType: TimeTableType.all,
-    );
-    final tbodyOwn = await getTableBody(
-      document,
-      timeTableType: TimeTableType.own,
-    );
+  /// Offline/fixture entry point used by tests and [getHome].
+  TimeTable parseDocument(Document document) => parseDocumentHtml(document);
+
+  /// Parse a raw `stundenplan.php` HTML body (fixtures / offline).
+  TimeTable parseHtml(String html) => parseDocumentHtml(parse(html));
+
+  /// Static HTML parse path for unit tests (no session required).
+  static TimeTable parseDocumentHtml(Document document) {
+    final tbodyAll = document.querySelector('#all tbody');
+    final tbodyOwn = document.querySelector('#own tbody');
     final String? weekBadge = document
         .querySelector('#aktuelleWoche')
         ?.text
         .trim();
-    final List<TimetableDay> parsedAll = parseRoomPlan(tbodyAll!);
-    final List<TimetableDay>? parsedOwn = (tbodyOwn == null
-        ? null
-        : parseRoomPlan(tbodyOwn));
 
-    final hours = parseRows(tbodyAll);
+    // Missing full plan table: return empty rather than crashing (LANIS-MOBILE-I).
+    if (tbodyAll == null) {
+      return TimeTable(
+        planForAll: const [],
+        planForOwn: tbodyOwn == null ? null : parseRoomPlan(tbodyOwn),
+        hours: const [],
+        weekBadge: weekBadge,
+      );
+    }
 
     return TimeTable(
-      planForAll: parsedAll,
-      planForOwn: parsedOwn,
-      hours: hours,
+      planForAll: parseRoomPlan(tbodyAll),
+      planForOwn: tbodyOwn == null ? null : parseRoomPlan(tbodyOwn),
+      hours: parseRows(tbodyAll),
       weekBadge: weekBadge,
     );
   }
@@ -96,52 +104,53 @@ class TimetableStudentParser extends AppletParser<TimeTable> {
     }
   }
 
-  List<TimetableDay> parseRoomPlan(Element tbody) {
-    int dayCount = tbody.children[0].children.length - 1;
-    List<TimetableDay> result = List.generate(dayCount, (_) => []);
+  static List<TimetableDay> parseRoomPlan(Element tbody) {
+    if (tbody.children.isEmpty) return const [];
 
-    List<(SphTimeOfDay, SphTimeOfDay)> timeSlots = tbody
+    final dayCount = tbody.children[0].children.length - 1;
+    if (dayCount <= 0) return const [];
+
+    final List<TimetableDay> result = List.generate(dayCount, (_) => []);
+
+    final List<(SphTimeOfDay, SphTimeOfDay)> timeSlots = tbody
         .querySelectorAll('.VonBis')
-        .map((e) {
-          var timeString = e.text.trim();
-          var s = timeString.split(' - ');
-          var splitA = s[0].split(':');
-          var splitB = s[1].split(':');
-          return (
-            SphTimeOfDay(
-              hour: int.parse(splitA[0]),
-              minute: int.parse(splitA[1]),
-            ),
-            SphTimeOfDay(
-              hour: int.parse(splitB[0]),
-              minute: int.parse(splitB[1]),
-            ),
-          );
-        })
+        .map(_parseVonBis)
+        .whereType<(SphTimeOfDay, SphTimeOfDay)>()
         .toList();
 
-    List<List<bool>> alreadyParsed = List.generate(
-      timeSlots.length + 1,
+    // Cover all table rows; + buffer for aggressive rowspan values.
+    final List<List<bool>> alreadyParsed = List.generate(
+      tbody.children.length + 32,
       (_) => List.generate(dayCount, (_) => false),
     );
 
-    bool timeslotOffsetFirstRow =
+    final bool timeslotOffsetFirstRow =
+        tbody.children[0].children.isNotEmpty &&
         tbody.children[0].children[0].text.trim() != '';
 
     for (var (rowIndex, rowElement) in tbody.children.indexed) {
-      if (rowIndex == 0) continue; // skip first empty row
+      if (rowIndex == 0) continue; // skip first empty/header row
       for (var (colIndex, colElement) in rowElement.children.indexed) {
         if (colIndex == 0) continue; // skip first column
-        final int rowSpan = int.parse(colElement.attributes['rowspan'] ?? '1');
+        final int rowSpan = int.tryParse(
+              colElement.attributes['rowspan'] ?? '1',
+            ) ??
+            1;
 
         var actualDay = colIndex - 1;
-        // actualDay should be the first where alreadyParsed is false
-        while (alreadyParsed[rowIndex][actualDay]) {
+        while (actualDay < dayCount && alreadyParsed[rowIndex][actualDay]) {
           actualDay++;
         }
-        // set all the affected rowspans to true
+        // LANIS-MOBILE-3/7: rowspan layout walked past the last day column.
+        if (actualDay >= dayCount) continue;
+
+        // LANIS-MOBILE-M: rowspan extending past tracked rows.
         for (var i = 0; i < rowSpan; i++) {
-          alreadyParsed[rowIndex + i][actualDay] = true;
+          final r = rowIndex + i;
+          if (r >= alreadyParsed.length) break;
+          if (actualDay < alreadyParsed[r].length) {
+            alreadyParsed[r][actualDay] = true;
+          }
         }
 
         result[actualDay].addAll(
@@ -158,30 +167,23 @@ class TimetableStudentParser extends AppletParser<TimeTable> {
     return result;
   }
 
-  List<TimeTableRow> parseRows(Element tbody) {
-    List<TimeTableRow> result = [];
+  static List<TimeTableRow> parseRows(Element tbody) {
+    final List<TimeTableRow> result = [];
     for (var (rowIndex, rowElement) in tbody.children.indexed) {
-      if (rowIndex == 0) continue; // skip first empty row
-      for (var (_, colElement) in rowElement.children.indexed) {
-        Element? e = colElement.querySelector('.VonBis');
-        Element label = colElement.querySelector('.print-show')!;
-        label = label.querySelector('b') ?? label;
+      if (rowIndex == 0) continue;
+      for (final colElement in rowElement.children) {
+        final Element? e = colElement.querySelector('.VonBis');
         if (e == null) break;
-        var timeString = e.text.trim();
-        var s = timeString.split(' - ');
-        var splitA = s[0].split(':');
-        var splitB = s[1].split(':');
+        final Element? labelRoot = colElement.querySelector('.print-show');
+        if (labelRoot == null) break;
+        final label = labelRoot.querySelector('b') ?? labelRoot;
+        final slot = _parseVonBis(e);
+        if (slot == null) break;
         result.add(
           TimeTableRow(
             TimeTableRowType.lesson,
-            SphTimeOfDay(
-              hour: int.parse(splitA[0]),
-              minute: int.parse(splitA[1]),
-            ),
-            SphTimeOfDay(
-              hour: int.parse(splitB[0]),
-              minute: int.parse(splitB[1]),
-            ),
+            slot.$1,
+            slot.$2,
             label.text.trim(),
             rowIndex,
           ),
@@ -192,33 +194,47 @@ class TimetableStudentParser extends AppletParser<TimeTable> {
     return result;
   }
 
-  List<TimetableSubject> parseSingeHour(
+  static List<TimetableSubject> parseSingeHour(
     Element cell,
     int y,
     List<(SphTimeOfDay, SphTimeOfDay)> timeSlots,
     bool timeslotOffsetFirstRow,
     int day,
   ) {
-    List<TimetableSubject> result = [];
-    for (var row in cell.querySelectorAll('.stunde')) {
-      var name = row.querySelector('b')?.text.trim();
-      var raum = row.nodes
+    final List<TimetableSubject> result = [];
+    for (final row in cell.querySelectorAll('.stunde')) {
+      final name = row.querySelector('b')?.text.trim();
+      final raum = row.nodes
           .map((node) => node.nodeType == 3 ? node.text!.trim() : '')
           .join();
-      var lehrer = row.querySelector('small')?.text.trim();
-      var badge = row.querySelector('.badge')?.text.trim();
-      var duration = int.parse(row.parent!.attributes['rowspan']!);
-      var startTime = timeslotOffsetFirstRow
-          ? timeSlots[y].$1
-          : timeSlots[y - 1].$1;
-      var endTime = timeslotOffsetFirstRow
-          ? timeSlots[y + duration - 1].$2
-          : timeSlots[y - 1 + duration - 1].$2;
-      // Id unique for every subject. Added with startTime to make it unique
-      // even if lessons are removed.
+      final lehrer = row.querySelector('small')?.text.trim();
+      final badge = row.querySelector('.badge')?.text.trim();
+      final duration =
+          int.tryParse(row.parent?.attributes['rowspan'] ?? '1') ?? 1;
+
+      final startIndex = timeslotOffsetFirstRow ? y : y - 1;
+      final endIndex = timeslotOffsetFirstRow
+          ? y + duration - 1
+          : y - 1 + duration - 1;
+
+      // When VonBis is hidden (admin setting) or rowspan exceeds known slots,
+      // still keep the lesson — clock times are best-effort / zeroed.
+      final SphTimeOfDay startTime;
+      final SphTimeOfDay endTime;
+      if (timeSlots.isNotEmpty &&
+          startIndex >= 0 &&
+          endIndex >= 0 &&
+          startIndex < timeSlots.length &&
+          endIndex < timeSlots.length) {
+        startTime = timeSlots[startIndex].$1;
+        endTime = timeSlots[endIndex].$2;
+      } else {
+        startTime = const SphTimeOfDay(hour: 0, minute: 0);
+        endTime = const SphTimeOfDay(hour: 0, minute: 0);
+      }
+
       var id = row.attributes['data-mix'];
       if (id == null || id.isEmpty) {
-        // Convert name to a reproducible unique id
         id = Uuid().v5(Namespace.url.value, name ?? raum).replaceAll('-', '');
       }
 
@@ -237,5 +253,25 @@ class TimetableStudentParser extends AppletParser<TimeTable> {
       );
     }
     return result;
+  }
+
+  static (SphTimeOfDay, SphTimeOfDay)? _parseVonBis(Element e) {
+    final timeString = e.text.trim();
+    final s = timeString.split(' - ');
+    if (s.length != 2) return null;
+    final splitA = s[0].split(':');
+    final splitB = s[1].split(':');
+    if (splitA.length < 2 || splitB.length < 2) return null;
+    final aHour = int.tryParse(splitA[0]);
+    final aMin = int.tryParse(splitA[1]);
+    final bHour = int.tryParse(splitB[0]);
+    final bMin = int.tryParse(splitB[1]);
+    if (aHour == null || aMin == null || bHour == null || bMin == null) {
+      return null;
+    }
+    return (
+      SphTimeOfDay(hour: aHour, minute: aMin),
+      SphTimeOfDay(hour: bHour, minute: bMin),
+    );
   }
 }

@@ -18,8 +18,7 @@ void main() {
   });
 
   group('timetable parser', () {
-    // TODO: Add anonymized fixture-based parser tests once this account
-    // has stable timetable data (or commit empty-state fixtures).
+    // Covered by test/timetable_parser_test.dart (raw HTML fixtures).
   });
 
   group('conversations parser', () {

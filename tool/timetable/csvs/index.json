@@ -1,0 +1,146 @@
+[
+  {
+    "name": "01_empty",
+    "description": "Header only — empty plan / missing lessons",
+    "rows": 0,
+    "file": "tool/timetable/csvs/01_empty.csv"
+  },
+  {
+    "name": "02_single_monday_lesson",
+    "description": "Single weekday only (dayCount==1 crash path)",
+    "rows": 1,
+    "file": "tool/timetable/csvs/02_single_monday_lesson.csv"
+  },
+  {
+    "name": "03_full_week_basic",
+    "description": "Mon–Fri one lesson each, single hour",
+    "rows": 5,
+    "file": "tool/timetable/csvs/03_full_week_basic.csv"
+  },
+  {
+    "name": "04_double_lessons_plus",
+    "description": "Doppelstunden via 1+2 syntax",
+    "rows": 3,
+    "file": "tool/timetable/csvs/04_double_lessons_plus.csv"
+  },
+  {
+    "name": "05_hour_ranges",
+    "description": "Stundenbereiche 1-4 and 3-6",
+    "rows": 3,
+    "file": "tool/timetable/csvs/05_hour_ranges.csv"
+  },
+  {
+    "name": "06_hour_lists",
+    "description": "Comma-separated non-contiguous hours",
+    "rows": 3,
+    "file": "tool/timetable/csvs/06_hour_lists.csv"
+  },
+  {
+    "name": "07_week_ab_split",
+    "description": "A/B week badges on same slots",
+    "rows": 4,
+    "file": "tool/timetable/csvs/07_week_ab_split.csv"
+  },
+  {
+    "name": "08_week_gu_split",
+    "description": "G/U (gerade/ungerade) week badges",
+    "rows": 4,
+    "file": "tool/timetable/csvs/08_week_gu_split.csv"
+  },
+  {
+    "name": "09_stacked_same_slot",
+    "description": "Multiple subjects in the same day/hour cell",
+    "rows": 3,
+    "file": "tool/timetable/csvs/09_stacked_same_slot.csv"
+  },
+  {
+    "name": "10_rowspan_long_block",
+    "description": "Long contiguous block spanning many hours (rowspan stress)",
+    "rows": 2,
+    "file": "tool/timetable/csvs/10_rowspan_long_block.csv"
+  },
+  {
+    "name": "11_dense_rowspan_grid",
+    "description": "Overlapping rowspans across days to stress column walk",
+    "rows": 15,
+    "file": "tool/timetable/csvs/11_dense_rowspan_grid.csv"
+  },
+  {
+    "name": "12_pausenaufsicht_mixed",
+    "description": "Pausenaufsicht rows mixed with Stunde",
+    "rows": 5,
+    "file": "tool/timetable/csvs/12_pausenaufsicht_mixed.csv"
+  },
+  {
+    "name": "13_multi_class_same_lesson",
+    "description": "One lesson assigned to multiple Klassen",
+    "rows": 2,
+    "file": "tool/timetable/csvs/13_multi_class_same_lesson.csv"
+  },
+  {
+    "name": "14_weekend_sunday",
+    "description": "Sunday (Wochentag=7) plus Saturday if used",
+    "rows": 3,
+    "file": "tool/timetable/csvs/14_weekend_sunday.csv"
+  },
+  {
+    "name": "15_last_hour_overflow",
+    "description": "Lessons pinned to last raster hours (index overflow path)",
+    "rows": 3,
+    "file": "tool/timetable/csvs/15_last_hour_overflow.csv"
+  },
+  {
+    "name": "16_all_days_all_hours_sparse",
+    "description": "Every weekday, alternating hours across full raster",
+    "rows": 30,
+    "file": "tool/timetable/csvs/16_all_days_all_hours_sparse.csv"
+  },
+  {
+    "name": "17_two_classes_parallel",
+    "description": "Parallel plans for two Klassen filling the grid",
+    "rows": 20,
+    "file": "tool/timetable/csvs/17_two_classes_parallel.csv"
+  },
+  {
+    "name": "18_mixed_formats_kitchen_sink",
+    "description": "Mix of +, ranges, lists, weeks, pause, multi-class",
+    "rows": 9,
+    "file": "tool/timetable/csvs/18_mixed_formats_kitchen_sink.csv"
+  },
+  {
+    "name": "19_minimal_own_plan_signal",
+    "description": "Kurs names matching Lerngruppen style for personal (#own) plan",
+    "rows": 4,
+    "file": "tool/timetable/csvs/19_minimal_own_plan_signal.csv"
+  },
+  {
+    "name": "20_collision_heavy",
+    "description": "Many overlapping entries same day to stress alreadyParsed",
+    "rows": 12,
+    "file": "tool/timetable/csvs/20_collision_heavy.csv"
+  },
+  {
+    "name": "21_single_hour_midday",
+    "description": "Only mid-day hour across week (sparse columns)",
+    "rows": 5,
+    "file": "tool/timetable/csvs/21_single_hour_midday.csv"
+  },
+  {
+    "name": "22_three_day_only",
+    "description": "Tue/Thu/Fri only — irregular day set",
+    "rows": 4,
+    "file": "tool/timetable/csvs/22_three_day_only.csv"
+  },
+  {
+    "name": "23_pause_before_each_hour",
+    "description": "Pausenaufsicht before hours 2..N plus lessons",
+    "rows": 11,
+    "file": "tool/timetable/csvs/23_pause_before_each_hour.csv"
+  },
+  {
+    "name": "24_full_grid_mon_fri",
+    "description": "Complete Mon–Fri grid every hour for class 1 — max HTML complexity",
+    "rows": 55,
+    "file": "tool/timetable/csvs/24_full_grid_mon_fri.csv"
+  }
+]
