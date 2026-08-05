@@ -1,5 +1,5 @@
 name: liblanis
-description: Pure Dart SPH (Schulportal Hessen) client with Riverpod state, optional sqlite3 persistence, and multi-account support.
+description: Build apps and scripts against SPH without Flutter - batteries included.
 version: 0.1.0
 homepage: https://github.com/lanis-mobile/liblanis
 repository: https://github.com/lanis-mobile/liblanis
