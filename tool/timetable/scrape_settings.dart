@@ -1,4 +1,6 @@
 /// Scrape Stundenplan admin/settings pages that may affect student HTML.
+library;
+
 import 'dart:convert';
 import 'dart:io';
 

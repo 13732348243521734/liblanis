@@ -340,7 +340,7 @@ Future<void> main(List<String> args) async {
   }
 
   final root = Directory.current.path;
-  final outDir = Directory(p.join(root, fixtureDir))..createSync(recursive: true);
+  Directory(p.join(root, fixtureDir)).createSync(recursive: true);
   Directory(p.join(root, 'tool/calendar/discovery')).createSync(recursive: true);
   Directory(p.join(root, 'tool/calendar/run')).createSync(recursive: true);
   final stateFile = File(p.join(root, statePath));
@@ -440,7 +440,7 @@ Future<void> main(List<String> args) async {
           ..error = null;
         processed++;
         stdout.writeln(
-          '[${processed}${limit == null ? '' : '/$limit'}] ${job.id} -> '
+          '[$processed${limit == null ? '' : '/$limit'}] ${job.id} -> '
           '${job.eventsJsonType}',
         );
       } catch (e) {

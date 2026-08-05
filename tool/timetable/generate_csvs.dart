@@ -965,7 +965,7 @@ List<PlanVariant> _buildPlans(Discovery d) {
               teacher: d.teacherAt(day + h),
               kurs: d.courseAt(day + h, klasse: k0),
               klassen: k0,
-              raum: 'R${day}${h.toString().padLeft(2, '0')}',
+              raum: 'R$day${h.toString().padLeft(2, '0')}',
             ),
       ],
     ),
