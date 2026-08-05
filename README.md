@@ -1,10 +1,12 @@
 # liblanis
 
+[![pub package](https://img.shields.io/pub/v/liblanis.svg)](https://pub.dev/packages/liblanis)
+
 Pure Dart client for [Schulportal Hessen (SPH / Lanis)](https://start.schulportal.hessen.de).
 
 Session stack, multi-account storage, optional `sqlite3` persistence, injectable secrets, and applet parsers. **No Flutter dependency** for the core API. Flutter apps can use the Riverpod integration documented below.
 
-> This package is developed as a submodule of [lanis-mobile/lanis](https://github.com/lanis-mobile/lanis). It is designed to be pub.dev-compatible but is **not published yet**.
+Published on [pub.dev](https://pub.dev/packages/liblanis). Also used as a submodule of [lanis-mobile/lanis](https://github.com/lanis-mobile/lanis).
 
 ## Features
 
@@ -18,12 +20,11 @@ Session stack, multi-account storage, optional `sqlite3` persistence, injectable
 
 ## Install
 
-```yaml
-dependencies:
-  liblanis:
-    path: liblanis
+```sh
+dart pub add liblanis
 ```
 
+Or add `liblanis` under `dependencies` in your `pubspec.yaml` (see [pub.dev](https://pub.dev/packages/liblanis) for the current version).
 For Flutter apps that use the Riverpod API, also add:
 
 ```yaml
