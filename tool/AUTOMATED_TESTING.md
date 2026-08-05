@@ -24,8 +24,8 @@ tool/<applet>/
   generate_permutations.dart
   dedupe_fixtures.dart
   <inputs>/                 # CSV / JSON / other payloads used as axes
-  discovery/                # ephemeral HTML dumps (gitignored via tool/*/discovery/)
-  run/                      # resume state (gitignored via tool/*/run/)
+  discovery/                # local scrape dumps (gitignored; regenerate as needed)
+  run/                      # local resume state for long permutation runs (gitignored)
 
 test/fixtures/<applet>/     # committed raw HTML + manifest.json
 test/<applet>_parser_test.dart
@@ -67,8 +67,8 @@ Before inventing fixtures, scrape the live admin / applet UI for:
 - Forms and query parameters that change rendered HTML
 - Hidden settings that only appear on admin pages
 
-Persist raw dumps under `tool/<applet>/discovery/` for local debugging; keep them
-gitignored. A small `summary.json` of ids/labels is enough for generators.
+Persist raw dumps under `tool/<applet>/discovery/` (local only; gitignored). A
+small `summary.json` of ids/labels is enough for generators.
 
 **Timetable example:** Lerngruppen, Stundenraster, admin Anzeigeeinstellungen
 (`VonBisAusblenden`, `KursnamenEinblenden`, `kursnamenvergleich`).
@@ -218,6 +218,26 @@ dart run tool/timetable/generate_permutations.dart
 dart run tool/timetable/dedupe_fixtures.dart
 dart test test/timetable_parser_test.dart
 ```
+
+Substitutions concrete commands:
+
+```sh
+dart run tool/substitutions/generate_inputs.dart
+dart run tool/substitutions/capture_matrix.dart
+# packs discovery/capture_raw → test/fixtures/substitutions
+cp tool/substitutions/discovery/capture_raw/*__{page.html,ajax.txt} \
+  test/fixtures/substitutions/ 2>/dev/null || true
+dart run tool/substitutions/dedupe_fixtures.dart
+dart run tool/substitutions/probe_parser.dart
+dart test test/substitutions_parser_test.dart
+# restore school defaults / ganzer-plan off (also done at end of capture_matrix)
+dart run tool/substitutions/capture_matrix.dart --restore-only
+```
+
+`capture_matrix.dart` enables Ansicht **Zugriff auf den gesamten Plan**, uploads
+content CSVs, one-factor flips every **Weitere Einstellungen** field, captures
+student/admin `a=my` HTML + `ganzerPlan` AJAX, then restores defaults.
+
 
 ---
 

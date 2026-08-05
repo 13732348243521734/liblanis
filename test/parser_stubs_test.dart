@@ -8,8 +8,7 @@ void main() {
   // then replace these stubs.
 
   group('substitutions parser', () {
-    // TODO: Add anonymized fixture-based parser tests once this account
-    // has stable substitution data (or commit empty-state fixtures).
+    // Covered by test/substitutions_parser_test.dart (live + synthetic fixtures).
   });
 
   group('calendar parser', () {

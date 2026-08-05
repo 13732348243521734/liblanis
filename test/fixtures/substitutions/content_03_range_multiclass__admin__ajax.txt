@@ -1,0 +1,1 @@
+[{"Tag":"06.08.2026","Vertreter":"lernsys","Lehrer":"lernsys","Stunde":"3-4","Klasse":"1, 2, 3","Klasse_alt":null,"Fach":"D","Fach_alt":null,"Raum":"R303","Raum_alt":null,"Hinweis":"RM03_range_multiclass","Art":"Betreuung","Hinweis2":"","Lerngruppe":null,"Tag_en":"2026-08-06","Lehrerkuerzel":"lernsys","Vertreterkuerzel":"lernsys","_hervorgehoben":[]}]

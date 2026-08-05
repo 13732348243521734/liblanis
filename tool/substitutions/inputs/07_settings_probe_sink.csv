@@ -1,0 +1,7 @@
+Tag;Lehrer;Stunde;Klasse;Art;Vertreter;Fach;Raum;Hinweis;Raum_alt;Fach_alt;Klasse_alt;Hinweis2
+2026-08-06;lernsys;1;1;Entfall;;M;R101;RM07_sink_entfall;;;;
+2026-08-06;lernsys;2;2;Raumvertretung;lernsys;E;R202;RM07_sink_raum;R100;D;;
+2026-08-06;lernsys;3-4;4S;Vertretung;lernsys;D;R303;RM07_sink_vtr;;;;
+2026-08-06;lernsys;5;G1;Betreuung;;Sp;Halle;RM07_sink_betreuung;;;;
+2026-08-06;lernsys;6;1;Sondereinsatz;lernsys;Ku;R6;RM07_sink_sonder;;;;
+2026-08-07;lernsys;1-2;1;Freisetzung;;M;R1;RM07_sink_day2;;;;

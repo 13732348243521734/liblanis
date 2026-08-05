@@ -1,0 +1,13 @@
+{
+  "synthetic": [
+    "ajax_ok_rich",
+    "ajax_error_int",
+    "ajax_html_body",
+    "ajax_missing_tag_element",
+    "nonajax_full_columns",
+    "nonajax_missing_stunde_header",
+    "nonajax_missing_vtable",
+    "empty_shell",
+    "unauthorized_shell"
+  ]
+}

@@ -1,0 +1,220 @@
+{
+  "live": [
+    {
+      "id": "content_01_single_entfall__admin",
+      "page": "content_01_single_entfall__admin__page.html",
+      "ajax": "content_01_single_entfall__admin__ajax.txt"
+    },
+    {
+      "id": "content_01_single_entfall__student",
+      "page": "content_01_single_entfall__student__page.html",
+      "ajax": "content_01_single_entfall__student__ajax.txt"
+    },
+    {
+      "id": "content_02_raumvertretung_alts__admin",
+      "page": "content_02_raumvertretung_alts__admin__page.html",
+      "ajax": "content_02_raumvertretung_alts__admin__ajax.txt"
+    },
+    {
+      "id": "content_02_raumvertretung_alts__student",
+      "page": "content_02_raumvertretung_alts__student__page.html",
+      "ajax": "content_02_raumvertretung_alts__student__ajax.txt"
+    },
+    {
+      "id": "content_03_range_multiclass__admin",
+      "page": "content_03_range_multiclass__admin__page.html",
+      "ajax": "content_03_range_multiclass__admin__ajax.txt"
+    },
+    {
+      "id": "content_03_range_multiclass__student",
+      "page": "content_03_range_multiclass__student__page.html",
+      "ajax": "content_03_range_multiclass__student__ajax.txt"
+    },
+    {
+      "id": "content_04_pausenaufsicht__admin",
+      "page": "content_04_pausenaufsicht__admin__page.html",
+      "ajax": "content_04_pausenaufsicht__admin__ajax.txt"
+    },
+    {
+      "id": "content_04_pausenaufsicht__student",
+      "page": "content_04_pausenaufsicht__student__page.html",
+      "ajax": "content_04_pausenaufsicht__student__ajax.txt"
+    },
+    {
+      "id": "content_06_two_days__admin",
+      "page": "content_06_two_days__admin__page.html",
+      "ajax": "content_06_two_days__admin__ajax.txt"
+    },
+    {
+      "id": "content_06_two_days__student",
+      "page": "content_06_two_days__student__page.html",
+      "ajax": "content_06_two_days__student__ajax.txt"
+    },
+    {
+      "id": "content_08_today__admin",
+      "page": "content_08_today__admin__page.html",
+      "ajax": "content_08_today__admin__ajax.txt"
+    },
+    {
+      "id": "content_08_today__student",
+      "page": "content_08_today__student__page.html",
+      "ajax": "content_08_today__student__ajax.txt"
+    },
+    {
+      "id": "sentinel_ganzer_off__admin",
+      "page": "sentinel_ganzer_off__admin__page.html",
+      "ajax": "sentinel_ganzer_off__admin__ajax.txt"
+    },
+    {
+      "id": "sentinel_ganzer_off__student",
+      "page": "sentinel_ganzer_off__student__page.html",
+      "ajax": "sentinel_ganzer_off__student__ajax.txt"
+    },
+    {
+      "id": "sentinel_no_ganzer_param__admin",
+      "page": "sentinel_no_ganzer_param__admin__page.html",
+      "ajax": "sentinel_no_ganzer_param__admin__ajax.txt"
+    },
+    {
+      "id": "set_farbigeZeilen_yes__admin",
+      "page": "set_farbigeZeilen_yes__admin__page.html",
+      "ajax": "set_farbigeZeilen_yes__admin__ajax.txt"
+    },
+    {
+      "id": "set_farbigeZeilen_yes__student",
+      "page": "set_farbigeZeilen_yes__student__page.html",
+      "ajax": "set_farbigeZeilen_yes__student__ajax.txt"
+    },
+    {
+      "id": "set_lehrerklarBoard_nachname__admin",
+      "page": "set_lehrerklarBoard_nachname__admin__page.html",
+      "ajax": "set_lehrerklarBoard_nachname__admin__ajax.txt"
+    },
+    {
+      "id": "set_lehrerklarBoard_nachname__student",
+      "page": "set_lehrerklarBoard_nachname__student__page.html",
+      "ajax": "set_lehrerklarBoard_nachname__student__ajax.txt"
+    },
+    {
+      "id": "set_lehrerklarBoard_vorname__admin",
+      "page": "set_lehrerklarBoard_vorname__admin__page.html",
+      "ajax": "set_lehrerklarBoard_vorname__admin__ajax.txt"
+    },
+    {
+      "id": "set_lehrerklarBoard_vorname__student",
+      "page": "set_lehrerklarBoard_vorname__student__page.html",
+      "ajax": "set_lehrerklarBoard_vorname__student__ajax.txt"
+    },
+    {
+      "id": "set_lehrerklar_nachname__admin",
+      "page": "set_lehrerklar_nachname__admin__page.html",
+      "ajax": "set_lehrerklar_nachname__admin__ajax.txt"
+    },
+    {
+      "id": "set_lehrerklar_nachname__student",
+      "page": "set_lehrerklar_nachname__student__page.html",
+      "ajax": "set_lehrerklar_nachname__student__ajax.txt"
+    },
+    {
+      "id": "set_lehrerklar_vorname__admin",
+      "page": "set_lehrerklar_vorname__admin__page.html",
+      "ajax": "set_lehrerklar_vorname__admin__ajax.txt"
+    },
+    {
+      "id": "set_lehrerklar_vorname__student",
+      "page": "set_lehrerklar_vorname__student__page.html",
+      "ajax": "set_lehrerklar_vorname__student__ajax.txt"
+    },
+    {
+      "id": "set_skipDays_onlyInfos__admin",
+      "page": "set_skipDays_onlyInfos__admin__page.html",
+      "ajax": "set_skipDays_onlyInfos__admin__ajax.txt"
+    },
+    {
+      "id": "set_skipDays_onlyInfos__student",
+      "page": "set_skipDays_onlyInfos__student__page.html",
+      "ajax": "set_skipDays_onlyInfos__student__ajax.txt"
+    },
+    {
+      "id": "set_strike_ja__admin",
+      "page": "set_strike_ja__admin__page.html",
+      "ajax": "set_strike_ja__admin__ajax.txt"
+    },
+    {
+      "id": "set_strike_ja__student",
+      "page": "set_strike_ja__student__page.html",
+      "ajax": "set_strike_ja__student__ajax.txt"
+    },
+    {
+      "id": "set_strikeboard_ja__admin",
+      "page": "set_strikeboard_ja__admin__page.html",
+      "ajax": "set_strikeboard_ja__admin__ajax.txt"
+    },
+    {
+      "id": "set_stundenanzeigeBoard_lang__admin",
+      "page": "set_stundenanzeigeBoard_lang__admin__page.html",
+      "ajax": "set_stundenanzeigeBoard_lang__admin__ajax.txt"
+    },
+    {
+      "id": "set_stundenanzeigeBoard_lang__student",
+      "page": "set_stundenanzeigeBoard_lang__student__page.html",
+      "ajax": "set_stundenanzeigeBoard_lang__student__ajax.txt"
+    },
+    {
+      "id": "set_stundenanzeige_lang__admin",
+      "page": "set_stundenanzeige_lang__admin__page.html",
+      "ajax": "set_stundenanzeige_lang__admin__ajax.txt"
+    },
+    {
+      "id": "set_stundenanzeige_lang__student",
+      "page": "set_stundenanzeige_lang__student__page.html",
+      "ajax": "set_stundenanzeige_lang__student__ajax.txt"
+    },
+    {
+      "id": "set_vergleichBeiSuS_klasse-stufe-lerngruppe-stundenplan__admin",
+      "page": "set_vergleichBeiSuS_klasse-stufe-lerngruppe-stundenplan__admin__page.html",
+      "ajax": "set_vergleichBeiSuS_klasse-stufe-lerngruppe-stundenplan__admin__ajax.txt"
+    },
+    {
+      "id": "set_vergleichBeiSuS_klasse-stufe-lerngruppe-stundenplan__student",
+      "page": "set_vergleichBeiSuS_klasse-stufe-lerngruppe-stundenplan__student__page.html",
+      "ajax": "set_vergleichBeiSuS_klasse-stufe-lerngruppe-stundenplan__student__ajax.txt"
+    },
+    {
+      "id": "set_vergleichBeiSuS_klasse-stufe-lerngruppe__admin",
+      "page": "set_vergleichBeiSuS_klasse-stufe-lerngruppe__admin__page.html",
+      "ajax": "set_vergleichBeiSuS_klasse-stufe-lerngruppe__admin__ajax.txt"
+    },
+    {
+      "id": "set_vergleichBeiSuS_klasse-stufe-lerngruppe__student",
+      "page": "set_vergleichBeiSuS_klasse-stufe-lerngruppe__student__page.html",
+      "ajax": "set_vergleichBeiSuS_klasse-stufe-lerngruppe__student__ajax.txt"
+    },
+    {
+      "id": "set_vertretungsprotokoll_no__student",
+      "page": "set_vertretungsprotokoll_no__student__page.html",
+      "ajax": "set_vertretungsprotokoll_no__student__ajax.txt"
+    },
+    {
+      "id": "set_zeigeStandLuL_ja__admin",
+      "page": "set_zeigeStandLuL_ja__admin__page.html",
+      "ajax": "set_zeigeStandLuL_ja__admin__ajax.txt"
+    },
+    {
+      "id": "set_zeigeStandLuL_ja__student",
+      "page": "set_zeigeStandLuL_ja__student__page.html",
+      "ajax": "set_zeigeStandLuL_ja__student__ajax.txt"
+    },
+    {
+      "id": "settings_baseline__admin",
+      "page": "settings_baseline__admin__page.html",
+      "ajax": "settings_baseline__admin__ajax.txt"
+    },
+    {
+      "id": "settings_baseline__student",
+      "page": "settings_baseline__student__page.html",
+      "ajax": "settings_baseline__student__ajax.txt"
+    }
+  ],
+  "count": 43
+}

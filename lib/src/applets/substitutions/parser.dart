@@ -59,43 +59,116 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
   @override
   Future<SubstitutionPlan> getHome() async {
     loadFilterFromStorage();
-    String document = await getSubstitutionPlanDocument();
-    Document parsedDocument = parse(document);
+    final document = await getSubstitutionPlanDocument();
+    final dates = getSubstitutionDates(document);
+    final ajaxByDate = <String, String>{};
+    for (final date in dates) {
+      ajaxByDate[date] = await fetchSubstitutionsAjaxBody(date);
+    }
+    final plan = parseDocumentHtml(document, ajaxByDate: ajaxByDate);
+    plan.filterAll(localFilter);
+    return plan;
+  }
 
-    // Parse the last edit date from the HTML
-    DateTime? lastEdit = parseLastEditDate(document);
+  /// Offline entry: parse shell HTML plus optional AJAX day bodies.
+  ///
+  /// Uses the AJAX path when the shell exposes `data-tag="dd.MM.yyyy"` **and**
+  /// [ajaxByDate] supplies a body for at least one of those dates. Otherwise
+  /// falls back to non-AJAX `#tagDD_MM_YYYY` / `#vtable…` table parsing
+  /// (personal plan when "Zugriff auf den gesamten Plan" is off).
+  static SubstitutionPlan parseDocumentHtml(
+    String html, {
+    Map<String, String>? ajaxByDate,
+  }) {
+    final lastEdit = parseLastEditDate(html);
+    final dates = getSubstitutionDates(html);
+    final parsedDocument = parse(html);
 
-    var dates = getSubstitutionDates(document);
+    final hasAjaxPayload = ajaxByDate != null &&
+        dates.any((d) => ajaxByDate.containsKey(d));
 
-    // Create the plan with the extracted timestamp
-    var fullPlan = SubstitutionPlan(lastUpdated: lastEdit);
-
-    if (dates.isEmpty) {
-      fullPlan = parseSubstitutionsNonAJAX(parsedDocument);
-
-      // Make sure to preserve the timestamp even when using the non-AJAX format
-      fullPlan.lastUpdated = lastEdit ?? DateTime.now();
-    } else {
-      List<Future<SubstitutionDay>> futures = dates
-          .map((date) => getSubstitutionsAJAX(date))
-          .toList();
-      List<SubstitutionDay> plans = await Future.wait(futures);
-      for (SubstitutionDay day in plans) {
-        fullPlan.add(
-          day.withDayInfo(
-            parseInformationTables(
-              parsedDocument.getElementById(
-                'tag${entryFormat.format(day.dateTime)}',
-              )!,
-            ),
-          ),
-        );
-      }
+    if (dates.isEmpty || !hasAjaxPayload) {
+      final plan = parseSubstitutionsNonAJAX(parsedDocument);
+      plan.lastUpdated = lastEdit ?? DateTime.now();
+      return plan;
     }
 
+    final fullPlan = SubstitutionPlan(lastUpdated: lastEdit);
+    for (final date in dates) {
+      final body = ajaxByDate[date];
+      if (body == null) continue;
+      final day = parseAjaxDayJson(body, date);
+      final tagId = 'tag${DateFormat('dd_MM_yyyy').format(day.dateTime)}';
+      final tagEl = parsedDocument.getElementById(tagId);
+      final infos =
+          tagEl == null ? <SubstitutionInfo>[] : parseInformationTables(tagEl);
+      fullPlan.add(day.withDayInfo(infos));
+    }
     fullPlan.removeEmptyDays();
-    fullPlan.filterAll(localFilter);
     return fullPlan;
+  }
+
+  /// Parse one getSubstitutions AJAX response body for [date] (`dd.MM.yyyy`).
+  ///
+  /// SPH may return a JSON list, or a sentinel like `-1` when empty/invalid.
+  /// Non-list JSON / HTML is thrown for the caller (or global handler).
+  static SubstitutionDay parseAjaxDayJson(String body, String date) {
+    final trimmed = body.trim();
+    if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
+      throw FormatException(
+        'Substitution AJAX body is HTML, not a JSON list',
+        trimmed.length > 80 ? '${trimmed.substring(0, 80)}…' : trimmed,
+      );
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException catch (e) {
+      throw FormatException(
+        'Substitution AJAX body is not valid JSON',
+        e.message,
+      );
+    }
+    if (decoded is! List) {
+      // Sentinel empty / error codes → empty day rather than false crash.
+      if (decoded is num) {
+        return SubstitutionDay(parsedDate: date, substitutions: []);
+      }
+      throw FormatException(
+        'Substitution AJAX body is not a JSON list',
+        body.length > 80 ? '${body.substring(0, 80)}…' : body,
+      );
+    }
+
+    return SubstitutionDay(
+      parsedDate: date,
+      substitutions: [
+        for (final e in decoded)
+          if (e is Map)
+            Substitution(
+              tag: '${e['Tag'] ?? date}',
+              tag_en: '${e['Tag_en'] ?? ''}',
+              stunde: parseHours('${e['Stunde'] ?? ''}'),
+              vertreter: e['Vertreter']?.toString(),
+              lehrer: e['Lehrer']?.toString(),
+              klasse: e['Klasse']?.toString(),
+              klasse_alt: e['Klasse_alt']?.toString(),
+              fach: e['Fach']?.toString(),
+              fach_alt: e['Fach_alt']?.toString(),
+              raum: e['Raum']?.toString(),
+              raum_alt: e['Raum_alt']?.toString(),
+              hinweis: e['Hinweis']?.toString(),
+              hinweis2: e['Hinweis2']?.toString(),
+              art: e['Art']?.toString(),
+              Lehrerkuerzel: e['Lehrerkuerzel']?.toString(),
+              Vertreterkuerzel: e['Vertreterkuerzel']?.toString(),
+              lerngruppe: e['Lerngruppe'],
+              hervorgehoben: e['_hervorgehoben'] is List
+                  ? e['_hervorgehoben'] as List
+                  : null,
+            ),
+      ],
+    );
   }
 
   Future<String> getSubstitutionPlanDocument() async {
@@ -103,7 +176,7 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
       final response = await ctx.session.dio.get(
         'https://start.schulportal.hessen.de/vertretungsplan.php',
       );
-      return response.data;
+      return response.data.toString();
     } on SocketException {
       throw NetworkException();
     } catch (e) {
@@ -111,72 +184,7 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
     }
   }
 
-  SubstitutionPlan parseSubstitutionsNonAJAX(Document document) {
-    DateFormat entryFormat = DateFormat('dd_MM_yyyy');
-    final SubstitutionPlan fullPlan = SubstitutionPlan();
-    final dates = document
-        .querySelectorAll('[data-tag]')
-        .map((element) => element.attributes['data-tag']!);
-    for (var date in dates) {
-      DateTime parsedDate = entryFormat.parse(date);
-      String parsedDateStr = parsedDate.format('dd.MM.yyyy');
-      SubstitutionDay substitutionDay = SubstitutionDay(
-        parsedDate: parsedDateStr,
-        infos: parseInformationTables(document.getElementById('tag$date')!),
-      );
-      final vtable = document.querySelector('#vtable$date');
-      if (vtable == null) {
-        return fullPlan;
-      }
-      final headers = vtable
-          .querySelectorAll('th')
-          .map((e) => e.attributes['data-field']!)
-          .toList(growable: false);
-      for (var row
-          in vtable
-              .querySelectorAll('tbody tr')
-              .where(
-                (element) => element.querySelectorAll('td[colspan]').isEmpty,
-              )) {
-        final fields = row.querySelectorAll('td');
-        substitutionDay.add(
-          Substitution(
-            tag: parsedDate.format('dd.MM.yyyy'),
-            tag_en: date,
-            stunde: SubstitutionsParser.parseHours(
-              fields[headers.indexOf('Stunde')].text.trim(),
-            ),
-            fach: headers.contains('Fach')
-                ? fields[headers.indexOf('Fach')].text.trim()
-                : null,
-            art: headers.contains('Art')
-                ? fields[headers.indexOf('Art')].text.trim()
-                : null,
-            raum: headers.contains('Raum')
-                ? fields[headers.indexOf('Raum')].text.trim()
-                : null,
-            hinweis: headers.contains('Hinweis')
-                ? fields[headers.indexOf('Hinweis')].text.trim()
-                : null,
-            lehrer: headers.contains('Lehrer')
-                ? fields[headers.indexOf('Lehrer')].text.trim()
-                : null,
-            vertreter: headers.contains('Vertreter')
-                ? fields[headers.indexOf('Vertreter')].text.trim()
-                : null,
-            klasse: headers.contains('Klasse')
-                ? fields[headers.indexOf('Klasse')].text.trim()
-                : null,
-          ),
-        );
-      }
-      fullPlan.add(substitutionDay);
-    }
-    fullPlan.removeEmptyDays();
-    return fullPlan;
-  }
-
-  Future<SubstitutionDay> getSubstitutionsAJAX(String date) async {
+  Future<String> fetchSubstitutionsAjaxBody(String date) async {
     try {
       final response = await ctx.session.dio.post(
         'https://start.schulportal.hessen.de/vertretungsplan.php',
@@ -192,90 +200,145 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
           },
         ),
       );
-      return SubstitutionDay(
-        parsedDate: date,
-        substitutions: (jsonDecode(response.toString()) as List)
-            .map(
-              (e) => Substitution(
-                tag: e['Tag'],
-                tag_en: e['Tag_en'],
-                stunde: SubstitutionsParser.parseHours(e['Stunde']),
-                vertreter: e['Vertreter'],
-                lehrer: e['Lehrer'],
-                klasse: e['Klasse'],
-                klasse_alt: e['Klasse_alt'],
-                fach: e['Fach'],
-                fach_alt: e['Fach_alt'],
-                raum: e['Raum'],
-                raum_alt: e['Raum_alt'],
-                hinweis: e['Hinweis'],
-                hinweis2: e['Hinweis2'],
-                art: e['Art'],
-                Lehrerkuerzel: e['Lehrerkuerzel'],
-                Vertreterkuerzel: e['Vertreterkuerzel'],
-                lerngruppe: e['Lerngruppe'],
-                hervorgehoben: e['_hervorgehoben'],
-              ),
-            )
-            .toList(),
-      );
+      return response.data.toString();
     } on SocketException {
       throw NetworkException();
     }
   }
 
-  /// Returns a list of all available substitution dates in the format "dd.MM.yyyy"
-  ///
-  /// If the list is empty, the substitution plan is either empty or in non-AJAX format
-  List<String> getSubstitutionDates(String document) {
-    if (document.contains('Fehler - Schulportal Hessen - ')) {
-      throw UnauthorizedException();
-    } else {
-      RegExp datePattern = RegExp(r'data-tag="(\d{2})\.(\d{2})\.(\d{4})"');
-      Iterable<RegExpMatch> matches = datePattern.allMatches(document);
+  static SubstitutionPlan parseSubstitutionsNonAJAX(Document document) {
+    final entryFormat = DateFormat('dd_MM_yyyy');
+    final fullPlan = SubstitutionPlan();
+    final dateKeys = <String>{};
 
-      List<String> uniqueDates = [];
+    for (final element in document.querySelectorAll('[data-tag]')) {
+      final raw = element.attributes['data-tag'];
+      if (raw != null && raw.isNotEmpty) dateKeys.add(raw);
+    }
+    // Personal-plan shells often omit data-tag and only expose #tagDD_MM_YYYY.
+    final panelId = RegExp(r'^tag(\d{2})_(\d{2})_(\d{4})$');
+    for (final element in document.querySelectorAll('[id^=tag]')) {
+      final m = panelId.firstMatch(element.id);
+      if (m != null) {
+        dateKeys.add('${m.group(1)}.${m.group(2)}.${m.group(3)}');
+      }
+    }
 
-      for (RegExpMatch match in matches) {
-        int day = int.parse(match.group(1) ?? '00');
-        int month = int.parse(match.group(2) ?? '00');
-        int year = int.parse(match.group(3) ?? '00');
-        DateTime extractedDate = DateTime(year, month, day);
+    for (final date in dateKeys) {
+      final DateTime parsedDate;
+      try {
+        parsedDate = date.contains('.')
+            ? DateFormat('dd.MM.yyyy').parse(date)
+            : entryFormat.parse(date);
+      } catch (_) {
+        continue;
+      }
+      final idKey = entryFormat.format(parsedDate);
+      final tagEl = document.getElementById('tag$idKey') ??
+          document.getElementById('tag$date');
+      if (tagEl == null) continue;
 
-        String dateString = extractedDate.format('dd.MM.yyyy');
-
-        if (!uniqueDates.any((date) => date == dateString)) {
-          uniqueDates.add(dateString);
-        }
+      final substitutionDay = SubstitutionDay(
+        parsedDate: parsedDate.format('dd.MM.yyyy'),
+        infos: parseInformationTables(tagEl),
+      );
+      final vtable = document.querySelector('#vtable$idKey') ??
+          document.querySelector('#vtable$date') ??
+          tagEl.querySelector('table[id^=vtable]');
+      if (vtable == null) {
+        // Keep infos-only days instead of aborting the whole plan.
+        fullPlan.add(substitutionDay);
+        continue;
       }
 
-      return uniqueDates;
+      final headers = <String>[];
+      for (final th in vtable.querySelectorAll('th')) {
+        final field = th.attributes['data-field'];
+        if (field != null) headers.add(field);
+      }
+      final stundeIdx = headers.indexOf('Stunde');
+      if (stundeIdx < 0) {
+        // Unreadable table shape — keep day infos, skip rows.
+        fullPlan.add(substitutionDay);
+        continue;
+      }
+
+      for (final row in vtable.querySelectorAll('tbody tr').where(
+            (element) => element.querySelectorAll('td[colspan]').isEmpty,
+          )) {
+        final fields = row.querySelectorAll('td');
+        if (fields.length <= stundeIdx) continue;
+        String? col(String name) {
+          final i = headers.indexOf(name);
+          if (i < 0 || i >= fields.length) return null;
+          final text = fields[i].text.trim();
+          return text.isEmpty ? null : text;
+        }
+
+        substitutionDay.add(
+          Substitution(
+            tag: parsedDate.format('dd.MM.yyyy'),
+            tag_en: idKey,
+            stunde: parseHours(fields[stundeIdx].text.trim()),
+            fach: col('Fach'),
+            fach_alt: col('Fach_alt'),
+            art: col('Art'),
+            raum: col('Raum'),
+            raum_alt: col('Raum_alt'),
+            hinweis: col('Hinweis'),
+            hinweis2: col('Hinweis2'),
+            lehrer: col('Lehrer'),
+            vertreter: col('Vertreter'),
+            klasse: col('Klasse'),
+            klasse_alt: col('Klasse_alt'),
+          ),
+        );
+      }
+      fullPlan.add(substitutionDay);
     }
+    fullPlan.removeEmptyDays();
+    return fullPlan;
   }
 
-  /// Parses the first occurrence of a string this type into a DateTime object
-  /// "Letzte Aktualisierung: 08.05.2024 um 13:35:30 Uhr"
-  DateTime? parseLastEditDate(String document) {
-    RegExp lastEditPattern = RegExp(
+  /// Returns unique dates (`dd.MM.yyyy`) for the AJAX path.
+  ///
+  /// Empty list means empty plan or non-AJAX format.
+  static List<String> getSubstitutionDates(String document) {
+    if (document.contains('Fehler - Schulportal Hessen - ')) {
+      throw UnauthorizedException();
+    }
+    final datePattern = RegExp(r'data-tag="(\d{2})\.(\d{2})\.(\d{4})"');
+    final uniqueDates = <String>[];
+    for (final match in datePattern.allMatches(document)) {
+      final day = int.parse(match.group(1)!);
+      final month = int.parse(match.group(2)!);
+      final year = int.parse(match.group(3)!);
+      final dateString = DateTime(year, month, day).format('dd.MM.yyyy');
+      if (!uniqueDates.contains(dateString)) {
+        uniqueDates.add(dateString);
+      }
+    }
+    return uniqueDates;
+  }
+
+  /// Parses "Letzte Aktualisierung: 08.05.2024 um 13:35:30 Uhr".
+  static DateTime? parseLastEditDate(String document) {
+    final lastEditPattern = RegExp(
       r'Letzte\s+Aktualisierung:\s*(\d{2})\.(\d{2})\.(\d{4})\s+um\s+(\d{2}):(\d{2}):(\d{2})\s+Uhr',
       caseSensitive: false,
     );
-    RegExpMatch? match = lastEditPattern.firstMatch(document);
-    if (match == null) {
-      return null;
-    }
-
+    final match = lastEditPattern.firstMatch(document);
+    if (match == null) return null;
     try {
-      int day = int.parse(match.group(1) ?? '00');
-      int month = int.parse(match.group(2) ?? '00');
-      int year = int.parse(match.group(3) ?? '00');
-      int hour = int.parse(match.group(4) ?? '00');
-      int minute = int.parse(match.group(5) ?? '00');
-      int second = int.parse(match.group(6) ?? '00');
-
-      final timestamp = DateTime(year, month, day, hour, minute, second);
-      return timestamp;
-    } catch (e) {
+      return DateTime(
+        int.parse(match.group(3)!),
+        int.parse(match.group(2)!),
+        int.parse(match.group(1)!),
+        int.parse(match.group(4)!),
+        int.parse(match.group(5)!),
+        int.parse(match.group(6)!),
+      );
+    } catch (_) {
       return null;
     }
   }
@@ -288,19 +351,18 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
     return numbers.length == 2 ? '${numbers[0]} - ${numbers[1]}' : numbers[0];
   }
 
-  List<SubstitutionInfo> parseInformationTables(Element element) {
-    List<SubstitutionInfo> infos = [];
-
-    List<Element> tables = element.getElementsByClassName('infos');
+  static List<SubstitutionInfo> parseInformationTables(Element element) {
+    final infos = <SubstitutionInfo>[];
+    final tables = element.getElementsByClassName('infos');
     if (tables.isEmpty) return [];
-    Element? table = tables[0];
+    final table = tables[0];
 
-    var rows = table.querySelectorAll('tr');
-    bool isHeader = false;
+    final rows = table.querySelectorAll('tr');
+    var isHeader = false;
     SubstitutionInfo? tmpInfo;
-    for (var row in rows) {
-      var cells = row.querySelectorAll('td');
-      // This makes sure that different header class names are supported (e.g. subheader, sub-header)
+    for (final row in rows) {
+      final cells = row.querySelectorAll('td');
+      if (cells.isEmpty) continue;
       if (row.classes.join(',').contains('header')) isHeader = true;
       if (isHeader) {
         if (tmpInfo != null) {
@@ -315,7 +377,6 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
     if (tmpInfo != null) {
       infos.add(tmpInfo);
     }
-
     return infos;
   }
 }

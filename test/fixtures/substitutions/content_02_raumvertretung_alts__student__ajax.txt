@@ -1,0 +1,1 @@
+[{"Tag":"06.08.2026","Vertreter":"lernsys","Lehrer":"lernsys","Stunde":"2","Klasse":"2","Klasse_alt":"1","Fach":"E","Fach_alt":"D","Raum":"R202","Raum_alt":"R101","Hinweis":"RM02_raumvertretung","Art":"Raumvertretung","Hinweis2":"","Lerngruppe":null,"Tag_en":"2026-08-06","Lehrerkuerzel":"lernsys","Vertreterkuerzel":"lernsys","_hervorgehoben":[]}]

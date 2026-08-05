@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-08-05T21:31:35.257417",
+  "format": "csv-kuerzel",
+  "header": "Tag;Lehrer;Stunde;Klasse;Art;Vertreter;Fach;Raum;Hinweis;Raum_alt;Fach_alt;Klasse_alt;Hinweis2",
+  "classesUsed": [
+    "1",
+    "2",
+    "3",
+    "4S",
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "L1"
+  ],
+  "teachersUsed": [
+    "lernsys"
+  ],
+  "variants": [
+    {
+      "name": "01_single_entfall",
+      "description": "One Entfall tomorrow for Klasse 1",
+      "file": "tool/substitutions/inputs/01_single_entfall.csv",
+      "format": "csv-kuerzel",
+      "rows": 1,
+      "fingerprintPrefix": "RM01_single_entfall"
+    },
+    {
+      "name": "02_raumvertretung_alts",
+      "description": "Raumvertretung with Raum_alt/Fach_alt",
+      "file": "tool/substitutions/inputs/02_raumvertretung_alts.csv",
+      "format": "csv-kuerzel",
+      "rows": 1,
+      "fingerprintPrefix": "RM02_raumvertretung_alts"
+    },
+    {
+      "name": "03_range_multiclass",
+      "description": "Hour range and multi-class cell",
+      "file": "tool/substitutions/inputs/03_range_multiclass.csv",
+      "format": "csv-kuerzel",
+      "rows": 1,
+      "fingerprintPrefix": "RM03_range_multiclass"
+    },
+    {
+      "name": "04_pausenaufsicht",
+      "description": "Pause between hours as 2/3",
+      "file": "tool/substitutions/inputs/04_pausenaufsicht.csv",
+      "format": "csv-kuerzel",
+      "rows": 1,
+      "fingerprintPrefix": "RM04_pausenaufsicht"
+    },
+    {
+      "name": "05_entfall_block",
+      "description": "Several Entfall rows for info-block formation",
+      "file": "tool/substitutions/inputs/05_entfall_block.csv",
+      "format": "csv-kuerzel",
+      "rows": 4,
+      "fingerprintPrefix": "RM05_entfall_block"
+    },
+    {
+      "name": "06_two_days",
+      "description": "Rows on tomorrow and day+2",
+      "file": "tool/substitutions/inputs/06_two_days.csv",
+      "format": "csv-kuerzel",
+      "rows": 2,
+      "fingerprintPrefix": "RM06_two_days"
+    },
+    {
+      "name": "07_settings_probe_sink",
+      "description": "Dense plan for settings A/B captures",
+      "file": "tool/substitutions/inputs/07_settings_probe_sink.csv",
+      "format": "csv-kuerzel",
+      "rows": 6,
+      "fingerprintPrefix": "RM07_settings_probe_sink"
+    },
+    {
+      "name": "08_today",
+      "description": "Single row for today",
+      "file": "tool/substitutions/inputs/08_today.csv",
+      "format": "csv-kuerzel",
+      "rows": 1,
+      "fingerprintPrefix": "RM08_today"
+    }
+  ]
+}

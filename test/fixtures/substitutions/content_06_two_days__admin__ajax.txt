@@ -1,0 +1,1 @@
+[{"Tag":"06.08.2026","Vertreter":"lernsys","Lehrer":"lernsys","Stunde":"1","Klasse":"1","Klasse_alt":null,"Fach":"M","Fach_alt":null,"Raum":"R1","Raum_alt":null,"Hinweis":"RM06_day1","Art":"Tausch","Hinweis2":"","Lerngruppe":null,"Tag_en":"2026-08-06","Lehrerkuerzel":"lernsys","Vertreterkuerzel":"lernsys","_hervorgehoben":[]}]
