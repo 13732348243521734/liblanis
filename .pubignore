@@ -1,0 +1,25 @@
+# Development / fixture tooling (not needed by package consumers)
+test/
+tool/
+
+# Pub / build artifacts (normally gitignored; .pubignore overrides .gitignore)
+pubspec.lock
+build/
+doc/api/
+.packages
+.dart_tool/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Local credentials (belt-and-suspenders; also hidden so pub skips them)
+*.env
+.adminaccount.env
+.studentaccount.env
+.credentials.env
+
+# Generated sources not shipped from this package
+*.freezed.dart
