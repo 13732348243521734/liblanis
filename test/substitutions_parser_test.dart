@@ -123,6 +123,41 @@ void main() {
       expect(plan.allSubstitutions, isEmpty);
     });
 
+    test('nonajax underscore data-tag plus panel ids yields unique days', () {
+      // Production personal-plan shell: day buttons use data-tag="dd_MM_yyyy"
+      // while panels use id="tagDD_MM_YYYY". AJAX date discovery ignores
+      // underscore tags, so parsing falls back to non-AJAX.
+      final page = File(
+        p.join(synthDir.path, 'nonajax_underscore_data_tag__page.html'),
+      ).readAsStringSync();
+      expect(SubstitutionsParser.getSubstitutionDates(page), isEmpty);
+
+      final plan = SubstitutionsParser.parseDocumentHtml(page);
+      expect(
+        plan.days.map((d) => d.parsedDate).toList(),
+        ['11.08.2026', '12.08.2026'],
+      );
+      expect(plan.allSubstitutions, hasLength(2));
+      expect(plan.days[0].substitutions.single.klasse, '10a');
+      expect(plan.days[0].substitutions.single.stunde, '1');
+      expect(plan.days[1].substitutions.single.klasse, '10b');
+      expect(plan.days[1].substitutions.single.stunde, '3 - 4');
+      expect(plan.days[0].infos, isNotEmpty);
+      expect(plan.days[1].infos, isNotEmpty);
+    });
+
+    test('normalizeSubstitutionDateKey unifies dotted and underscore forms', () {
+      expect(
+        SubstitutionsParser.normalizeSubstitutionDateKey('11_08_2026'),
+        '11.08.2026',
+      );
+      expect(
+        SubstitutionsParser.normalizeSubstitutionDateKey('11.08.2026'),
+        '11.08.2026',
+      );
+      expect(SubstitutionsParser.normalizeSubstitutionDateKey('not-a-date'), isNull);
+    });
+
     test('empty_shell parses empty', () {
       final page = File(
         p.join(synthDir.path, 'empty_shell__page.html'),

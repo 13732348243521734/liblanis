@@ -213,7 +213,9 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
 
     for (final element in document.querySelectorAll('[data-tag]')) {
       final raw = element.attributes['data-tag'];
-      if (raw != null && raw.isNotEmpty) dateKeys.add(raw);
+      if (raw == null || raw.isEmpty) continue;
+      final key = normalizeSubstitutionDateKey(raw);
+      if (key != null) dateKeys.add(key);
     }
     // Personal-plan shells often omit data-tag and only expose #tagDD_MM_YYYY.
     final panelId = RegExp(r'^tag(\d{2})_(\d{2})_(\d{4})$');
@@ -298,6 +300,22 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
     }
     fullPlan.removeEmptyDays();
     return fullPlan;
+  }
+
+  /// Normalizes SPH date keys (`dd.MM.yyyy` or `dd_MM_yyyy`) to `dd.MM.yyyy`.
+  ///
+  /// Personal-plan shells put underscore tags on day buttons and dotted
+  /// (or panel-id) forms on the same calendar day. Treating those as distinct
+  /// keys duplicates days.
+  static String? normalizeSubstitutionDateKey(String raw) {
+    try {
+      final parsed = raw.contains('.')
+          ? DateFormat('dd.MM.yyyy').parse(raw)
+          : DateFormat('dd_MM_yyyy').parse(raw);
+      return parsed.format('dd.MM.yyyy');
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Returns unique dates (`dd.MM.yyyy`) for the AJAX path.

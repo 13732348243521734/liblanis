@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de"><body>
+<div id="content">
+  <h1>Mein Vertretungsplan</h1>
+  <!-- Production personal-plan day switcher uses underscore data-tag, not dd.MM.yyyy. -->
+  <div class="panel" id="menue_tag">
+    <div class="panel-body">
+      <button data-tag="11_08_2026" id="day1" class="btn btn-primary">Dienstag, 11.08.2026</button>
+      <button data-tag="12_08_2026" id="day2" class="btn btn-info">Mittwoch, 12.08.2026</button>
+    </div>
+  </div>
+  <div class="panel panel-primary" id="tag11_08_2026">
+    <div class="panel-heading">Dienstag, den 11.08.2026</div>
+    <div class="panel-body">
+      <h3>Informationen zum 11.08.2026</h3>
+      <table class="table infos">
+        <tbody>
+          <tr class="subheader"><td><b>Allgemein</b></td></tr>
+          <tr><td><p>Allgemeine Hinweise zum Stundenplan.</p></td></tr>
+        </tbody>
+      </table>
+      <h3>Vertretungen am 11.08.2026</h3>
+      <table class="table" id="vtable11_08_2026">
+        <thead><tr>
+          <th data-field="Stunde">Stunde</th>
+          <th data-field="Klasse">Klasse</th>
+          <th data-field="Lehrer">Lehrkraft</th>
+          <th data-field="Fach">Fach</th>
+          <th data-field="Raum">Raum</th>
+          <th data-field="Raum_alt">Raum_alt</th>
+          <th data-field="Hinweis">Hinweis</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>10a</td>
+            <td>AAA</td>
+            <td>M</td>
+            <td>101</td>
+            <td></td>
+            <td>Raumwechsel</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel panel-info" id="tag12_08_2026">
+    <div class="panel-heading">Mittwoch, den 12.08.2026</div>
+    <div class="panel-body">
+      <h3>Informationen zum 12.08.2026</h3>
+      <table class="table infos">
+        <tbody>
+          <tr class="subheader"><td><b>Allgemein</b></td></tr>
+          <tr><td><p>Allgemeine Hinweise zum Stundenplan.</p></td></tr>
+        </tbody>
+      </table>
+      <h3>Vertretungen am 12.08.2026</h3>
+      <table class="table" id="vtable12_08_2026">
+        <thead><tr>
+          <th data-field="Stunde">Stunde</th>
+          <th data-field="Klasse">Klasse</th>
+          <th data-field="Lehrer">Lehrkraft</th>
+          <th data-field="Fach">Fach</th>
+          <th data-field="Raum">Raum</th>
+          <th data-field="Raum_alt">Raum_alt</th>
+          <th data-field="Hinweis">Hinweis</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td>3-4</td>
+            <td>10b</td>
+            <td>BBB</td>
+            <td>E</td>
+            <td>202</td>
+            <td>200</td>
+            <td></td>
+          </tr>
+          <tr><td colspan="7"><div class="alert"><b>Keine Einträge!</b></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body></html>

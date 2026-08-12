@@ -7,6 +7,7 @@
     "nonajax_full_columns",
     "nonajax_missing_stunde_header",
     "nonajax_missing_vtable",
+    "nonajax_underscore_data_tag",
     "empty_shell",
     "unauthorized_shell"
   ]
