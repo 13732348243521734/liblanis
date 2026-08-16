@@ -1,6 +1,16 @@
 import 'package:liblanis/liblanis.dart';
+import 'package:riverpod/misc.dart' show Override;
 import 'package:riverpod/riverpod.dart';
 import 'package:test/test.dart';
+
+import 'support/offline_http_adapter.dart';
+
+List<Override> _configure({String? documentCacheDirectory}) {
+  return LanisClient.configure(
+    documentCacheDirectory: documentCacheDirectory,
+    httpAdapter: OfflineHttpAdapter(),
+  );
+}
 
 void main() {
   tearDown(LanisClient.reset);
@@ -13,7 +23,7 @@ void main() {
   });
 
   test('configure in-memory and wire providers', () async {
-    final overrides = LanisClient.configure();
+    final overrides = _configure();
     final container = ProviderContainer(overrides: overrides);
     addTearDown(container.dispose);
 
@@ -50,7 +60,7 @@ void main() {
   });
 
   test('replace accountType does not change activeAccountId', () async {
-    final overrides = LanisClient.configure();
+    final overrides = _configure();
     final container = ProviderContainer(overrides: overrides);
     addTearDown(container.dispose);
 
@@ -82,7 +92,7 @@ void main() {
   });
 
   test('selecting another account does not circular-depend settings', () async {
-    final overrides = LanisClient.configure();
+    final overrides = _configure();
     final container = ProviderContainer(overrides: overrides);
     addTearDown(container.dispose);
 
@@ -109,7 +119,7 @@ void main() {
   });
 
   test('storage manager available when cache dir configured', () async {
-    final overrides = LanisClient.configure(
+    final overrides = _configure(
       documentCacheDirectory: '/tmp/liblanis_cache_test',
     );
     final container = ProviderContainer(overrides: overrides);
@@ -131,7 +141,7 @@ void main() {
   });
 
   test('clear active account leaves providers usable', () async {
-    final overrides = LanisClient.configure();
+    final overrides = _configure();
     final container = ProviderContainer(overrides: overrides);
     addTearDown(container.dispose);
 

@@ -194,6 +194,8 @@ class LanisSession {
       );
       dioHttp.interceptors.add(CookieManager(cookieJar));
       dioHttp.options.followRedirects = false;
+      dioHttp.options.connectTimeout = const Duration(seconds: 8);
+      dioHttp.options.receiveTimeout = const Duration(seconds: 8);
       dioHttp.options.validateStatus = (status) =>
           status != null && (status == 200 || status == 302 || status == 503);
 

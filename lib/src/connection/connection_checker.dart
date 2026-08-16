@@ -17,7 +17,13 @@ class ConnectionChecker {
 
   ConnectionChecker({HttpClientAdapter? httpAdapter})
     : _sharedAdapter = httpAdapter {
-    dio = Dio(BaseOptions(validateStatus: (status) => status != null));
+    dio = Dio(
+      BaseOptions(
+        validateStatus: (status) => status != null,
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 8),
+      ),
+    );
     if (httpAdapter != null) {
       dio.httpClientAdapter = httpAdapter;
     }

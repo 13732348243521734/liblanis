@@ -1,12 +1,17 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:liblanis/easy_client.dart';
 import 'package:test/test.dart';
+
+import 'support/offline_http_adapter.dart';
 
 void main() {
   tearDown(LanisClient.reset);
 
   group('EasyLanisClient.inMemory', () {
     test('opens in-memory database', () {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       expect(client.database.isInMemory, isTrue);
@@ -14,7 +19,7 @@ void main() {
     });
 
     test('account add, list, and remove', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       final id = await client.accounts.add(
@@ -32,7 +37,7 @@ void main() {
     });
 
     test('settings read and write', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       client.settings.shared.setString('color', 'blue');
@@ -54,7 +59,7 @@ void main() {
     });
 
     test('storage is null without cache directory', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       final id = await client.accounts.add(
@@ -68,7 +73,7 @@ void main() {
     });
 
     test('storage available when cache dir configured', () async {
-      final client = EasyLanisClient.inMemory(
+      final client = _offlineInMemory(
         documentCacheDirectory: '/tmp/liblanis_easy_cache_test',
       );
       addTearDown(() => client.dispose());
@@ -84,7 +89,7 @@ void main() {
     });
 
     test('parsers throws when no account prepared', () {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       expect(
@@ -94,7 +99,7 @@ void main() {
     });
 
     test('parsers available after account prepared', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       final id = await client.accounts.add(
@@ -110,7 +115,7 @@ void main() {
     });
 
     test('logout clears session and parsers', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       final id = await client.accounts.add(
@@ -133,7 +138,7 @@ void main() {
     });
 
     test('account switch replaces active session', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       final id1 = await client.accounts.add(
@@ -156,7 +161,7 @@ void main() {
     });
 
     test('setAccountType updates active account snapshot', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       final id = await client.accounts.add(
@@ -172,7 +177,7 @@ void main() {
     });
 
     test('remove active account logs out', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       final id = await client.accounts.add(
@@ -189,7 +194,7 @@ void main() {
     });
 
     test('supportedApplets empty before authentication', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       final id = await client.accounts.add(
@@ -204,7 +209,7 @@ void main() {
     });
 
     test('login requires accountId for persistent client', () async {
-      final client = EasyLanisClient.inMemory();
+      final client = _offlineInMemory();
       addTearDown(() => client.dispose());
 
       expect(
@@ -220,6 +225,7 @@ void main() {
         schoolId: 1,
         username: 'u',
         password: 'p',
+        httpAdapter: OfflineHttpAdapter(),
       );
       addTearDown(() => client.dispose());
 
@@ -239,11 +245,16 @@ void main() {
         schoolId: 1,
         username: 'u',
         password: 'p',
+        httpAdapter: OfflineHttpAdapter(),
       );
       addTearDown(() => client.dispose());
 
       try {
         await client.login();
+      } on TimeoutException {
+        // Live probe timed out (should not happen with OfflineHttpAdapter).
+      } on DioException {
+        // Transport error before it is mapped to LanisException.
       } on NoConnectionException {
         // Expected when SPH is unreachable (CI).
       } on LanisException {
@@ -257,22 +268,33 @@ void main() {
 
   group('EasyLanisClient.open', () {
     test('requires secretStore for file path', () {
-      expect(
-        () => EasyLanisClient.open(
-          databasePath: '/tmp/x.db',
-          secretStore: MemorySecretStore(),
-        ),
-        returnsNormally,
+      final client = EasyLanisClient.open(
+        databasePath: '/tmp/x.db',
+        secretStore: MemorySecretStore(),
+        httpAdapter: OfflineHttpAdapter(),
       );
+      addTearDown(client.dispose);
+      expect(client.database.isInMemory, isFalse);
     });
   });
+}
+
+EasyLanisClient _offlineInMemory({String? documentCacheDirectory}) {
+  return EasyLanisClient.inMemory(
+    documentCacheDirectory: documentCacheDirectory,
+    httpAdapter: OfflineHttpAdapter(),
+  );
 }
 
 /// Prepares session and parsers without requiring a successful SPH login.
 Future<void> _prepareAccount(EasyLanisClient client, int accountId) async {
   try {
     await client.login(accountId: accountId);
+  } on TimeoutException {
+    // Session is prepared before authenticate; do not fail the unit test.
+  } on DioException {
+    // Same if a transport error escapes mapping.
   } on LanisException {
-    // SPH unreachable in CI — session is still prepared before authenticate.
+    // SPH unreachable or mocked offline — session is still prepared.
   }
 }

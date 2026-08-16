@@ -1,6 +1,8 @@
 import 'package:liblanis/liblanis.dart';
 import 'package:test/test.dart';
 
+import 'support/offline_http_adapter.dart';
+
 class _ThrowingParser extends AppletParser<String> {
   final Object toThrow;
 
@@ -37,7 +39,7 @@ AppletContext _testContext(LanisConfig config) {
   final session = LanisSession(
     account: account,
     config: config,
-    connectionChecker: ConnectionChecker(),
+    connectionChecker: ConnectionChecker(httpAdapter: OfflineHttpAdapter()),
   );
   return AppletContext(
     session: session,
@@ -72,6 +74,7 @@ void main() {
       final reported = <Object>[];
       String? reportedApplet;
       final overrides = LanisClient.configure(
+        httpAdapter: OfflineHttpAdapter(),
         onUnexpectedError: (error, stackTrace, {required appletPhpUrl}) {
           reported.add(error);
           reportedApplet = appletPhpUrl;
@@ -99,6 +102,7 @@ void main() {
     test('reports FormatException', () async {
       final reported = <Object>[];
       LanisClient.configure(
+        httpAdapter: OfflineHttpAdapter(),
         onUnexpectedError: (error, stackTrace, {required appletPhpUrl}) {
           reported.add(error);
         },
@@ -122,6 +126,7 @@ void main() {
     test('does not report NetworkException', () async {
       final reported = <Object>[];
       LanisClient.configure(
+        httpAdapter: OfflineHttpAdapter(),
         onUnexpectedError: (error, stackTrace, {required appletPhpUrl}) {
           reported.add(error);
         },
@@ -144,6 +149,7 @@ void main() {
 
     test('broken reporter does not break error response', () async {
       LanisClient.configure(
+        httpAdapter: OfflineHttpAdapter(),
         onUnexpectedError: (error, stackTrace, {required appletPhpUrl}) {
           throw StateError('reporter exploded');
         },
@@ -168,7 +174,7 @@ void main() {
     });
 
     test('no callback configured is a no-op', () async {
-      LanisClient.configure();
+      LanisClient.configure(httpAdapter: OfflineHttpAdapter());
 
       final ctx = _testContext(LanisClient.config!);
       addTearDown(ctx.database.dispose);
