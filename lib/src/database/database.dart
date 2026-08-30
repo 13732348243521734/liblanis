@@ -75,6 +75,58 @@ class LanisDatabase {
         FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
       );
     ''');
+    // Feature 1 (Vertretungshistorie): eine Zeile pro zuletzt gesehenem
+    // Vertretungs-Eintrag (Schlüssel lehrer|fach|stunde), Bucket = Tag
+    // (tag_en). Bestehende Zeile wird bei jedem Diff-Lauf per HistoryDiffer
+    // aktualisiert/ersetzt, siehe lib/src/history/history_differ.dart.
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS substitution_history (
+        account_id INTEGER NOT NULL,
+        entry_key TEXT NOT NULL,
+        tag_en TEXT NOT NULL,
+        stunde TEXT NOT NULL,
+        snapshot_json TEXT NOT NULL,
+        status TEXT NOT NULL,
+        first_seen TEXT NOT NULL,
+        last_seen TEXT NOT NULL,
+        change_detected_at TEXT,
+        PRIMARY KEY (account_id, tag_en, entry_key),
+        FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+      );
+    ''');
+    // Feature 2.5 (Stundenplanhistorie): ein Snapshot pro Datum, ab dem er
+    // gültig war. Wird sowohl für die Anzeige vergangener Wochen als auch
+    // als Cache für live per Redirect nachgeladene Wochen genutzt (5.3).
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS timetable_history (
+        account_id INTEGER NOT NULL,
+        valid_from_date TEXT NOT NULL,
+        timetable_json TEXT NOT NULL,
+        captured_at TEXT NOT NULL,
+        PRIMARY KEY (account_id, valid_from_date),
+        FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+      );
+    ''');
+    // Feature 3 (Dateispeicher-Backup): ein Eintrag pro entdeckter
+    // Serverdatei. last_seen_on_server wird bei fehlender Datei nur auf
+    // false gesetzt (nicht gelöscht), taucht sie wieder auf -> zurück auf
+    // true. Siehe lib/src/applets/data_storage/backup_service.dart.
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS datastorage_backup (
+        account_id INTEGER NOT NULL,
+        remote_file_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        folder_path TEXT NOT NULL,
+        local_path TEXT NOT NULL,
+        size INTEGER,
+        last_seen_on_server INTEGER NOT NULL DEFAULT 1,
+        server_changed_at TEXT,
+        first_downloaded_at TEXT NOT NULL,
+        last_checked_at TEXT NOT NULL,
+        PRIMARY KEY (account_id, remote_file_id),
+        FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+      );
+    ''');
   }
 
   void dispose() => _db.close();
