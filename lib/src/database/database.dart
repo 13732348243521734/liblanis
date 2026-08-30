@@ -403,4 +403,126 @@ class LanisDatabase {
     }
     return decoded;
   }
+
+  // —— Substitution history (Feature 1) ——
+  //
+  // One row per (account, tag_en/day-bucket, entry_key). `snapshot_json`
+  // holds the last-seen Substitution as JSON so it can be diffed against
+  // the next fetch without a second network request. `status` is the most
+  // recently detected change type for that entry (see
+  // SubstitutionChangeType); it is a display annotation, matching stays
+  // keyed on entry_key alone.
+
+  List<SubstitutionHistoryRow> getSubstitutionHistoryRows({
+    required int accountId,
+    required String tagEn,
+  }) {
+    final rows = _db.select(
+      '''
+      SELECT entry_key, tag_en, stunde, snapshot_json, status,
+             first_seen, last_seen, change_detected_at
+      FROM substitution_history
+      WHERE account_id = ? AND tag_en = ?
+      ''',
+      [accountId, tagEn],
+    );
+    return rows.map(_rowToSubstitutionHistoryRow).toList();
+  }
+
+  void upsertSubstitutionHistoryEntry({
+    required int accountId,
+    required String entryKey,
+    required String tagEn,
+    required String stunde,
+    required String snapshotJson,
+    required String status,
+    required DateTime firstSeen,
+    required DateTime lastSeen,
+    DateTime? changeDetectedAt,
+  }) {
+    _db.execute(
+      '''
+      INSERT INTO substitution_history (
+        account_id, entry_key, tag_en, stunde, snapshot_json, status,
+        first_seen, last_seen, change_detected_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(account_id, tag_en, entry_key) DO UPDATE SET
+        stunde = excluded.stunde,
+        snapshot_json = excluded.snapshot_json,
+        status = excluded.status,
+        last_seen = excluded.last_seen,
+        change_detected_at = excluded.change_detected_at
+      ''',
+      [
+        accountId,
+        entryKey,
+        tagEn,
+        stunde,
+        snapshotJson,
+        status,
+        firstSeen.toIso8601String(),
+        lastSeen.toIso8601String(),
+        changeDetectedAt?.toIso8601String(),
+      ],
+    );
+  }
+
+  void deleteSubstitutionHistoryEntry({
+    required int accountId,
+    required String entryKey,
+    required String tagEn,
+  }) {
+    _db.execute(
+      '''
+      DELETE FROM substitution_history
+      WHERE account_id = ? AND tag_en = ? AND entry_key = ?
+      ''',
+      [accountId, tagEn, entryKey],
+    );
+  }
+
+  /// Deletes entries not seen for longer than [retention]. Default retention
+  /// is 30 days (`substitution-history-retention-days` account setting).
+  void pruneSubstitutionHistory({
+    required int accountId,
+    required Duration retention,
+    DateTime? now,
+  }) {
+    final cutoff = (now ?? DateTime.now()).subtract(retention);
+    _db.execute(
+      '''
+      DELETE FROM substitution_history
+      WHERE account_id = ? AND last_seen < ?
+      ''',
+      [accountId, cutoff.toIso8601String()],
+    );
+  }
+
+  SubstitutionHistoryRow _rowToSubstitutionHistoryRow(Row row) {
+    final changeDetectedAtRaw = row['change_detected_at'] as String?;
+    return (
+      entryKey: row['entry_key'] as String,
+      tagEn: row['tag_en'] as String,
+      stunde: row['stunde'] as String,
+      snapshotJson: row['snapshot_json'] as String,
+      status: row['status'] as String,
+      firstSeen: DateTime.parse(row['first_seen'] as String),
+      lastSeen: DateTime.parse(row['last_seen'] as String),
+      changeDetectedAt: changeDetectedAtRaw != null
+          ? DateTime.parse(changeDetectedAtRaw)
+          : null,
+    );
+  }
 }
+
+/// Raw persisted row for a single substitution-history entry.
+typedef SubstitutionHistoryRow = ({
+  String entryKey,
+  String tagEn,
+  String stunde,
+  String snapshotJson,
+  String status,
+  DateTime firstSeen,
+  DateTime lastSeen,
+  DateTime? changeDetectedAt,
+});

@@ -9,9 +9,11 @@ import 'package:intl/intl.dart';
 
 import '../../exceptions.dart';
 import '../../models/substitution.dart';
+import '../../models/substitution_change.dart';
 import '../applet_context.dart';
 import '../applet_parser.dart';
 import '../definition.dart';
+import 'history.dart';
 
 class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
   final DateFormat entryFormat = DateFormat('dd_MM_yyyy');
@@ -27,6 +29,11 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
        );
 
   SubstitutionFilter localFilter = {};
+
+  /// Change events detected during the most recent [getHome] call
+  /// (feature plan 6). Empty on the very first fetch after
+  /// install/update — see [HistoryDiffer.process].
+  List<SubstitutionChangeEvent> lastChangeEvents = [];
 
   void saveFilterToStorage() {
     ctx.accountSettings.setJsonMap(
@@ -51,6 +58,13 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
         {};
   }
 
+  int get historyRetentionDays =>
+      ctx.accountSettings.getInt(substitutionHistoryRetentionDaysKey) ??
+      defaultSubstitutionHistoryRetentionDays;
+
+  set historyRetentionDays(int days) =>
+      ctx.accountSettings.setInt(substitutionHistoryRetentionDaysKey, days);
+
   @override
   SubstitutionPlan typeFromJson(String json) {
     return SubstitutionPlan.fromJson(jsonDecode(json));
@@ -66,6 +80,23 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
       ajaxByDate[date] = await fetchSubstitutionsAjaxBody(date);
     }
     final plan = parseDocumentHtml(document, ajaxByDate: ajaxByDate);
+
+    // Feature 1: diff every day in the freshly fetched plan against its
+    // last-seen snapshot and persist the new snapshot, *before* filtering
+    // — the filter is a display concern, history should track everything.
+    final capturedAt = DateTime.now();
+    lastChangeEvents = runSubstitutionHistoryDiff(
+      database: ctx.database,
+      accountId: ctx.accountId,
+      days: plan.days,
+      capturedAt: capturedAt,
+    );
+    ctx.database.pruneSubstitutionHistory(
+      accountId: ctx.accountId,
+      retention: Duration(days: historyRetentionDays),
+      now: capturedAt,
+    );
+
     plan.filterAll(localFilter);
     return plan;
   }
