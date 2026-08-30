@@ -14,9 +14,13 @@ const defaultSubstitutionHistoryRetentionDays = 30;
 
 /// Compares [previous] against [current] for a single day (bucketed by
 /// `tag_en`, feature plan 6.1) and returns the detected changes, or `null`
-/// when there is nothing to report — either because [previous] is `null`
-/// (first fetch after install/update; see [HistoryDiffer.process]) or
-/// because nothing changed.
+/// when there is nothing to report.
+///
+/// On the very first fetch for a given day (`previous == null`, e.g. right
+/// after install/update), every entry in [current] is reported as
+/// [SubstitutionChangeType.added] — there is no prior state to compare
+/// against, so "newly seen by this device" and "newly added" are treated
+/// the same.
 ///
 /// Matching key: `lehrer|fach|stunde` (see [substitutionHistoryKey]). If
 /// lehrer/fach/stunde stay the same but another field (e.g. `raum`)
@@ -25,10 +29,8 @@ List<SubstitutionChangeEvent>? diffSubstitutionDay(
   SubstitutionDay? previous,
   SubstitutionDay current,
 ) {
-  if (previous == null) return null;
-
   final previousByKey = <String, Substitution>{
-    for (final s in previous.substitutions) substitutionHistoryKey(s): s,
+    for (final s in previous?.substitutions ?? []) substitutionHistoryKey(s): s,
   };
   final currentByKey = <String, Substitution>{
     for (final s in current.substitutions) substitutionHistoryKey(s): s,
