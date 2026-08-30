@@ -35,12 +35,29 @@ void main() {
   });
 
   group('diffSubstitutionDay', () {
-    test('previous == null -> null (no artificial "everything is new")', () {
+    test('previous == null -> every current entry reported as added', () {
       final day = SubstitutionDay(
         parsedDate: '01.09.2026',
-        substitutions: [_sub()],
+        substitutions: [_sub(stunde: '3'), _sub(stunde: '5', fach: 'Physik')],
       );
-      expect(diffSubstitutionDay(null, day), isNull);
+      final events = diffSubstitutionDay(null, day);
+      expect(events, hasLength(2));
+      expect(
+        events!.every((e) => e.type == SubstitutionChangeType.added),
+        isTrue,
+      );
+      expect(events.map((e) => e.entryKey), [
+        'Müller|Mathe|3',
+        'Müller|Physik|5',
+      ]);
+    });
+
+    test('previous == null and current has no entries -> null', () {
+      final emptyDay = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [],
+      );
+      expect(diffSubstitutionDay(null, emptyDay), isNull);
     });
 
     test('key collision, raum changes -> modified with a raum delta', () {

@@ -22,11 +22,12 @@ class HistoryDiffer<T> {
   /// oder `null` liefert. So vergleicht der nächste Aufruf wieder gegen den
   /// tatsächlich zuletzt gesehenen Snapshot.
   ///
-  /// [diff] liefert `null`, wenn es nichts zu berichten gibt: entweder weil
-  /// `previous == null` (erster Fetch nach Update/Neuinstallation — bewusst
-  /// KEIN Diff-Event beim allerersten Snapshot, sonst entsteht beim Rollout
-  /// ein riesiges künstliches "alles ist neu"-Ereignis) oder weil sich
-  /// inhaltlich nichts geändert hat.
+  /// `previous` ist beim allerersten Aufruf für einen Account `null`. Ob
+  /// [diff] das dann als "nichts zu berichten" behandelt (kein Diff-Event
+  /// beim ersten Snapshot) oder als "alles ist neu" (jeder Eintrag in
+  /// `current` wird gemeldet), entscheidet die jeweilige [diff]-Implementierung
+  /// — [HistoryDiffer] selbst erzwingt hier keine Konvention. Ansonsten
+  /// liefert [diff] `null`, wenn sich inhaltlich nichts geändert hat.
   R? process<R>(
     int accountId,
     T current,

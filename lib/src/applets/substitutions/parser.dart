@@ -31,8 +31,9 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
   SubstitutionFilter localFilter = {};
 
   /// Change events detected during the most recent [getHome] call
-  /// (feature plan 6). Empty on the very first fetch after
-  /// install/update — see [HistoryDiffer.process].
+  /// (feature plan 6). On the very first fetch for a given day, every
+  /// entry currently on the plan comes back as [SubstitutionChangeType.
+  /// added] — see [diffSubstitutionDay].
   List<SubstitutionChangeEvent> lastChangeEvents = [];
 
   void saveFilterToStorage() {
