@@ -267,3 +267,41 @@ String? _tagEnFromParsedDate(String parsedDate) {
   if (parts.length != 3) return null;
   return '${parts[2]}-${parts[1]}-${parts[0]}';
 }
+
+/// Reconstructs display-ready [SubstitutionChangeEvent]s from persisted
+/// `substitution_history` rows — one event per entry, reflecting its most
+/// recently recorded status (feature plan 6, point 4: "Änderungsverlauf"
+/// screen).
+///
+/// Unlike the events returned live from [runSubstitutionHistoryDiff], these
+/// do not carry [SubstitutionChangeEvent.fieldDeltas]: the table only
+/// persists the current snapshot plus the last-detected status, not a full
+/// delta history across every prior update.
+List<SubstitutionChangeEvent> loadSubstitutionHistoryEvents({
+  required LanisDatabase database,
+  required int accountId,
+  int limit = 200,
+}) {
+  final rows = database.getAllSubstitutionHistoryRows(
+    accountId: accountId,
+    limit: limit,
+  );
+  return [
+    for (final row in rows)
+      _rowToChangeEvent(row),
+  ];
+}
+
+SubstitutionChangeEvent _rowToChangeEvent(SubstitutionHistoryRow row) {
+  final sub = Substitution.fromJson(
+    jsonDecode(row.snapshotJson) as Map<String, dynamic>,
+  );
+  final type = SubstitutionChangeType.values.byName(row.status);
+  return SubstitutionChangeEvent(
+    type: type,
+    entryKey: row.entryKey,
+    tagEn: row.tagEn,
+    current: type == SubstitutionChangeType.removed ? null : sub,
+    previous: type == SubstitutionChangeType.removed ? sub : null,
+  );
+}

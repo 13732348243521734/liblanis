@@ -270,5 +270,40 @@ void main() {
         isEmpty,
       );
     });
+
+    test('loadSubstitutionHistoryEvents returns most recently changed entries first', () {
+      final day1 = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [_sub(tagEn: '2026-09-01', stunde: '1', fach: 'Deutsch')],
+      );
+      final day2 = SubstitutionDay(
+        parsedDate: '02.09.2026',
+        substitutions: [_sub(tagEn: '2026-09-02', stunde: '2', fach: 'Englisch')],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [day1],
+        capturedAt: DateTime(2026, 9, 1, 8),
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [day2],
+        capturedAt: DateTime(2026, 9, 1, 9),
+      );
+
+      final events = loadSubstitutionHistoryEvents(
+        database: db,
+        accountId: accountId,
+      );
+
+      expect(events, hasLength(2));
+      // Most recently detected change (day2, 09:00) comes first.
+      expect(events.first.tagEn, '2026-09-02');
+      expect(events.first.type, SubstitutionChangeType.added);
+      expect(events.first.current?.fach, 'Englisch');
+      expect(events.last.tagEn, '2026-09-01');
+    });
   });
 }

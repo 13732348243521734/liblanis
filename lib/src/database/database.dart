@@ -429,6 +429,27 @@ class LanisDatabase {
     return rows.map(_rowToSubstitutionHistoryRow).toList();
   }
 
+  /// All history rows for [accountId] across every day, most recently
+  /// changed first (`change_detected_at`, falling back to `last_seen`).
+  /// Backs the app's "Änderungsverlauf" screen (feature plan 6, point 4).
+  List<SubstitutionHistoryRow> getAllSubstitutionHistoryRows({
+    required int accountId,
+    int limit = 200,
+  }) {
+    final rows = _db.select(
+      '''
+      SELECT entry_key, tag_en, stunde, snapshot_json, status,
+             first_seen, last_seen, change_detected_at
+      FROM substitution_history
+      WHERE account_id = ?
+      ORDER BY COALESCE(change_detected_at, last_seen) DESC, tag_en DESC
+      LIMIT ?
+      ''',
+      [accountId, limit],
+    );
+    return rows.map(_rowToSubstitutionHistoryRow).toList();
+  }
+
   void upsertSubstitutionHistoryEntry({
     required int accountId,
     required String entryKey,
