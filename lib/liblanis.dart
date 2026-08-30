@@ -19,6 +19,7 @@ export 'src/config.dart';
 export 'src/connection/connection_checker.dart';
 export 'src/database/database.dart';
 export 'src/exceptions.dart';
+export 'src/history/history_differ.dart';
 export 'src/models/account.dart';
 export 'src/models/account_types.dart';
 export 'src/models/calendar_event.dart';
