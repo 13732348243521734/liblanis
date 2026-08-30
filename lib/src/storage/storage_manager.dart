@@ -32,6 +32,19 @@ class StorageManager {
   /// Optional existence check override.
   final Future<bool> Function(String path)? existsOverride;
 
+  /// Subfolder under the account's cache root used for this manager's
+  /// files. Defaults to `document_cache` (today's behaviour). A second
+  /// [StorageManager] instance can point at a different subfolder (e.g.
+  /// `permanent_backup`) to keep files separate from the regular document
+  /// cache without duplicating the download/hash-path logic.
+  final String cacheSubfolder;
+
+  /// Whether [downloadFile] should call [_enforceLimits] after a
+  /// successful download. Defaults to `true` (today's behaviour). Set to
+  /// `false` for storage instances that should never be evicted
+  /// automatically, e.g. a permanent backup.
+  final bool enforceLimits;
+
   StorageManager({
     required this.session,
     required this.config,
@@ -39,6 +52,8 @@ class StorageManager {
     this.pathLayout,
     this.onDownloaded,
     this.existsOverride,
+    this.cacheSubfolder = 'document_cache',
+    this.enforceLimits = true,
   });
 
   String get _cacheRoot {
@@ -53,7 +68,7 @@ class StorageManager {
     if (!config.storageEnabled) {
       throw StorageNotConfiguredException('Document storage is disabled');
     }
-    final dir = Directory(p.join(_cacheRoot, '$accountId', 'document_cache'));
+    final dir = Directory(p.join(_cacheRoot, '$accountId', cacheSubfolder));
     if (!dir.existsSync()) {
       dir.createSync(recursive: true);
     }
@@ -150,7 +165,9 @@ class StorageManager {
     raf.writeFromSync(response.data as List<int>);
     await raf.close();
 
-    await _enforceLimits();
+    if (enforceLimits) {
+      await _enforceLimits();
+    }
     if (onDownloaded != null) {
       await onDownloaded!(savePath);
     }
