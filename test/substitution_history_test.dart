@@ -190,6 +190,102 @@ void main() {
       expect(day2Rows.single.status, 'added');
     });
 
+    test('day emptied but still in fetch window -> marked removed', () {
+      final day = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [_sub(tagEn: '2026-09-01')],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [day],
+        capturedAt: DateTime(2026, 9, 1, 8),
+        windowDates: ['01.09.2026'],
+      );
+
+      // Next fetch: the portal still returns 01.09.2026 in its date window,
+      // but with zero substitutions and zero infos -- parseDocumentHtml's
+      // removeEmptyDays() would have stripped it from `days` already, so
+      // simulate that by NOT including it in `days`, only in `windowDates`.
+      final events = runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [],
+        capturedAt: DateTime(2026, 9, 1, 9),
+        windowDates: ['01.09.2026'],
+      );
+
+      expect(events, hasLength(1));
+      expect(events.single.type, SubstitutionChangeType.removed);
+      expect(events.single.tagEn, '2026-09-01');
+
+      final rows = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '2026-09-01',
+      );
+      expect(rows.single.status, 'removed');
+    });
+
+    test('day scrolls out of the fetch window entirely -> left untouched, no false removal', () {
+      final day = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [_sub(tagEn: '2026-09-01')],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [day],
+        capturedAt: DateTime(2026, 9, 1, 8),
+        windowDates: ['01.09.2026'],
+      );
+
+      // Next fetch: 01.09.2026 is now in the past, the portal's date window
+      // moved on and no longer returns it at all -- neither in `days` nor
+      // in `windowDates`. This must NOT be treated as a removal.
+      final events = runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [],
+        capturedAt: DateTime(2026, 9, 2, 8),
+        windowDates: ['02.09.2026', '03.09.2026'],
+      );
+
+      expect(events, isEmpty);
+
+      final rows = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '2026-09-01',
+      );
+      expect(rows.single.status, 'added');
+    });
+
+    test('windowDates defaults to empty -> preserves old days-only behaviour', () {
+      final day = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [_sub(tagEn: '2026-09-01')],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [day],
+        capturedAt: DateTime(2026, 9, 1, 8),
+      );
+
+      final events = runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [],
+        capturedAt: DateTime(2026, 9, 1, 9),
+      );
+
+      expect(events, isEmpty);
+      final rows = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '2026-09-01',
+      );
+      expect(rows.single.status, 'added');
+    });
+
     test('status persists across fetches: added -> unchanged keeps status, then modified updates it', () {
       final tagEn = '2026-09-01';
       final v1 = SubstitutionDay(

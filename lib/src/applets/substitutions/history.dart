@@ -231,35 +231,92 @@ class SubstitutionDayHistoryStore implements SnapshotStore<SubstitutionDay> {
   }
 }
 
-/// Runs the history diff/save for every day in [current] and returns all
+/// Runs the history diff/save for every day in [days] and returns all
 /// detected change events across days (feature plan 6.2, point 2).
 ///
-/// [tagEnOf] extracts the `yyyy-MM-dd` bucket for a day; the substitutions
-/// parser already carries this per-entry as `Substitution.tag_en`.
+/// [windowDates] should be the full set of days the school portal actually
+/// returned for this fetch (`dd.MM.yyyy`, from
+/// `SubstitutionsParser.getSubstitutionDates` — call it *before*
+/// `parseDocumentHtml`, since that strips fully-empty days before
+/// [days] is ever built). It closes a gap [days] alone can't: when a day
+/// goes from having substitutions to having none (and no infos),
+/// `removeEmptyDays()` inside `parseDocumentHtml` strips it before it ever
+/// reaches this function, so its history rows would otherwise never be
+/// marked removed and would only quietly disappear after
+/// [pruneSubstitutionHistory]'s retention window.
+///
+/// Only days still present in [windowDates] but missing from [days] are
+/// treated as "emptied" and diffed against an empty snapshot. A day that
+/// simply scrolled out of the portal's returned window (e.g. it's now in
+/// the past) is *not* in [windowDates] either, so it is correctly left
+/// alone — that's normal passage of time, not a substitution-plan change,
+/// and must not produce a false 'removed' event/notification.
+///
+/// [windowDates] defaults to empty, which preserves the previous behaviour
+/// (only [days] are diffed) for callers that don't have it handy.
 List<SubstitutionChangeEvent> runSubstitutionHistoryDiff({
   required LanisDatabase database,
   required int accountId,
   required List<SubstitutionDay> days,
   required DateTime capturedAt,
+  List<String> windowDates = const [],
 }) {
   final allEvents = <SubstitutionChangeEvent>[];
+  final coveredTagEns = <String>{};
+
   for (final day in days) {
     final tagEn = day.substitutions.isNotEmpty
         ? day.substitutions.first.tag_en
         : _tagEnFromParsedDate(day.parsedDate);
     if (tagEn == null || tagEn.isEmpty) continue;
+    coveredTagEns.add(tagEn);
 
-    final store = SubstitutionDayHistoryStore(database, tagEn);
-    final differ = HistoryDiffer<SubstitutionDay>(store);
-    final events = differ.process<List<SubstitutionChangeEvent>>(
-      accountId,
-      day,
-      capturedAt,
-      diffSubstitutionDay,
+    final events = _diffAndSaveDay(
+      database: database,
+      accountId: accountId,
+      tagEn: tagEn,
+      day: day,
+      capturedAt: capturedAt,
     );
     if (events != null) allEvents.addAll(events);
   }
+
+  for (final windowDate in windowDates) {
+    final tagEn = _tagEnFromParsedDate(windowDate);
+    if (tagEn == null || coveredTagEns.contains(tagEn)) continue;
+
+    final emptyDay = SubstitutionDay(
+      parsedDate: windowDate,
+      substitutions: [],
+    );
+    final events = _diffAndSaveDay(
+      database: database,
+      accountId: accountId,
+      tagEn: tagEn,
+      day: emptyDay,
+      capturedAt: capturedAt,
+    );
+    if (events != null) allEvents.addAll(events);
+  }
+
   return allEvents;
+}
+
+List<SubstitutionChangeEvent>? _diffAndSaveDay({
+  required LanisDatabase database,
+  required int accountId,
+  required String tagEn,
+  required SubstitutionDay day,
+  required DateTime capturedAt,
+}) {
+  final store = SubstitutionDayHistoryStore(database, tagEn);
+  final differ = HistoryDiffer<SubstitutionDay>(store);
+  return differ.process<List<SubstitutionChangeEvent>>(
+    accountId,
+    day,
+    capturedAt,
+    diffSubstitutionDay,
+  );
 }
 
 String? _tagEnFromParsedDate(String parsedDate) {

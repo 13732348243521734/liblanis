@@ -91,6 +91,7 @@ class SubstitutionsParser extends AppletParser<SubstitutionPlan> {
       accountId: ctx.accountId,
       days: plan.days,
       capturedAt: capturedAt,
+      windowDates: dates,
     );
     ctx.database.pruneSubstitutionHistory(
       accountId: ctx.accountId,
