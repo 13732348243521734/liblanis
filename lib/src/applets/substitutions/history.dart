@@ -4,6 +4,7 @@ import '../../database/database.dart';
 import '../../history/history_differ.dart';
 import '../../models/substitution.dart';
 import '../../models/substitution_change.dart';
+import '../../util/tag_en.dart';
 
 /// Account setting key controlling how long substitution-history entries
 /// are kept (in days) before [pruneSubstitutionHistory] removes them.
@@ -140,7 +141,7 @@ class SubstitutionDayHistoryStore implements SnapshotStore<SubstitutionDay> {
     );
     if (rows.isEmpty) return null;
     return SubstitutionDay(
-      parsedDate: _tagFromEn(tagEn),
+      parsedDate: tagEnToParsedDate(tagEn),
       substitutions: [
         for (final row in rows)
           Substitution.fromJson(
@@ -223,12 +224,6 @@ class SubstitutionDayHistoryStore implements SnapshotStore<SubstitutionDay> {
       );
     }
   }
-
-  static String _tagFromEn(String tagEn) {
-    final parts = tagEn.split('-');
-    if (parts.length != 3) return tagEn;
-    return '${parts[2]}.${parts[1]}.${parts[0]}';
-  }
 }
 
 /// Runs the history diff/save for every day in [days] and returns all
@@ -267,7 +262,7 @@ List<SubstitutionChangeEvent> runSubstitutionHistoryDiff({
   for (final day in days) {
     final tagEn = day.substitutions.isNotEmpty
         ? day.substitutions.first.tag_en
-        : _tagEnFromParsedDate(day.parsedDate);
+        : parsedDateToTagEn(day.parsedDate);
     if (tagEn == null || tagEn.isEmpty) continue;
     coveredTagEns.add(tagEn);
 
@@ -282,7 +277,7 @@ List<SubstitutionChangeEvent> runSubstitutionHistoryDiff({
   }
 
   for (final windowDate in windowDates) {
-    final tagEn = _tagEnFromParsedDate(windowDate);
+    final tagEn = parsedDateToTagEn(windowDate);
     if (tagEn == null || coveredTagEns.contains(tagEn)) continue;
 
     final emptyDay = SubstitutionDay(
@@ -317,14 +312,6 @@ List<SubstitutionChangeEvent>? _diffAndSaveDay({
     capturedAt,
     diffSubstitutionDay,
   );
-}
-
-String? _tagEnFromParsedDate(String parsedDate) {
-  // parsedDate is dd.MM.yyyy; days with zero substitutions (info-only days)
-  // fall back to converting it rather than requiring a substitution entry.
-  final parts = parsedDate.split('.');
-  if (parts.length != 3) return null;
-  return '${parts[2]}-${parts[1]}-${parts[0]}';
 }
 
 /// Reconstructs display-ready [SubstitutionChangeEvent]s from persisted
