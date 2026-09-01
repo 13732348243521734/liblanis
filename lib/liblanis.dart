@@ -41,3 +41,4 @@ export 'src/session/session.dart';
 export 'src/settings/typed_settings.dart';
 export 'src/lanis_client.dart';
 export 'src/storage/storage_manager.dart';
+export 'src/util/tag_en.dart';
