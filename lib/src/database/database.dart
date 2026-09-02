@@ -75,6 +75,20 @@ class LanisDatabase {
         FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
       );
     ''');
+    // NOTE for reviewers: this migration deliberately creates
+    // substitution_history (Feature 1, implemented, see history.dart)
+    // together with timetable_history and datastorage_backup below --
+    // those two back Feature 2.5 (Stundenplanhistorie) and Feature 3
+    // (Dateispeicher-Backup), which are NOT implemented yet at this point
+    // in history. This is an intentional batched pre-migration (see the
+    // project's feature plan, "Schritt 0"): all schema additions for the
+    // three planned history/backup features were front-loaded into one
+    // migration step before any of the features themselves landed, so
+    // that adding Feature 2.5/3 later doesn't need its own schema change.
+    // The trade-off -- unused tables with no access code sitting in main
+    // until those features ship -- was accepted deliberately, not an
+    // oversight.
+
     // Feature 1 (Vertretungshistorie): eine Zeile pro zuletzt gesehenem
     // Vertretungs-Eintrag (Schlüssel lehrer|fach|stunde), Bucket = Tag
     // (tag_en). Bestehende Zeile wird bei jedem Diff-Lauf per HistoryDiffer
