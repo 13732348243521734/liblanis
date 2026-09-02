@@ -127,6 +127,34 @@ class LanisDatabase {
         FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
       );
     ''');
+
+    // Additive column migrations go here, after all CREATE TABLE
+    // statements, using _ensureColumn (idempotent — safe to run against
+    // both fresh and already-migrated databases, unlike a bare
+    // ALTER TABLE ADD COLUMN, which errors on a second run).
+    _ensureColumn(
+      table: 'substitution_history',
+      column: 'field_deltas_json',
+      definition: 'TEXT',
+    );
+  }
+
+  /// Adds [column] to [table] if it doesn't already exist. Existing
+  /// `CREATE TABLE IF NOT EXISTS` statements only run once per table (they
+  /// no-op if the table is already there), so a column added to a
+  /// `CREATE TABLE` after it has already shipped needs this instead —
+  /// `ALTER TABLE ... ADD COLUMN` isn't idempotent on its own and throws
+  /// on a database that already has the column.
+  void _ensureColumn({
+    required String table,
+    required String column,
+    required String definition,
+  }) {
+    final columns = _db.select('PRAGMA table_info($table)');
+    final exists = columns.any((row) => row['name'] == column);
+    if (!exists) {
+      _db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
+    }
   }
 
   void dispose() => _db.close();
@@ -420,7 +448,7 @@ class LanisDatabase {
     final rows = _db.select(
       '''
       SELECT entry_key, tag_en, stunde, snapshot_json, status,
-             first_seen, last_seen, change_detected_at
+             first_seen, last_seen, change_detected_at, field_deltas_json
       FROM substitution_history
       WHERE account_id = ? AND tag_en = ?
       ''',
@@ -439,7 +467,7 @@ class LanisDatabase {
     final rows = _db.select(
       '''
       SELECT entry_key, tag_en, stunde, snapshot_json, status,
-             first_seen, last_seen, change_detected_at
+             first_seen, last_seen, change_detected_at, field_deltas_json
       FROM substitution_history
       WHERE account_id = ?
       ORDER BY COALESCE(change_detected_at, last_seen) DESC, tag_en DESC
@@ -460,19 +488,21 @@ class LanisDatabase {
     required DateTime firstSeen,
     required DateTime lastSeen,
     DateTime? changeDetectedAt,
+    String? fieldDeltasJson,
   }) {
     _db.execute(
       '''
       INSERT INTO substitution_history (
         account_id, entry_key, tag_en, stunde, snapshot_json, status,
-        first_seen, last_seen, change_detected_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        first_seen, last_seen, change_detected_at, field_deltas_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(account_id, tag_en, entry_key) DO UPDATE SET
         stunde = excluded.stunde,
         snapshot_json = excluded.snapshot_json,
         status = excluded.status,
         last_seen = excluded.last_seen,
-        change_detected_at = excluded.change_detected_at
+        change_detected_at = excluded.change_detected_at,
+        field_deltas_json = excluded.field_deltas_json
       ''',
       [
         accountId,
@@ -484,6 +514,7 @@ class LanisDatabase {
         firstSeen.toIso8601String(),
         lastSeen.toIso8601String(),
         changeDetectedAt?.toIso8601String(),
+        fieldDeltasJson,
       ],
     );
   }
@@ -532,6 +563,7 @@ class LanisDatabase {
       changeDetectedAt: changeDetectedAtRaw != null
           ? DateTime.parse(changeDetectedAtRaw)
           : null,
+      fieldDeltasJson: row['field_deltas_json'] as String?,
     );
   }
 }
@@ -546,4 +578,8 @@ typedef SubstitutionHistoryRow = ({
   DateTime firstSeen,
   DateTime lastSeen,
   DateTime? changeDetectedAt,
+  /// JSON-encoded `List<SubstitutionFieldDelta>` for the most recent
+  /// [SubstitutionChangeType.modified] transition, or `null` if this entry
+  /// has never been modified (only added/removed).
+  String? fieldDeltasJson,
 });
