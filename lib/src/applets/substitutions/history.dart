@@ -173,22 +173,29 @@ class SubstitutionDayHistoryStore implements SnapshotStore<SubstitutionDay> {
 
       final String status;
       DateTime? changeDetectedAt;
+      String? fieldDeltasJson;
       if (existing == null) {
         status = SubstitutionChangeType.added.name;
         changeDetectedAt = capturedAt;
+        fieldDeltasJson = null;
       } else {
         final previousSub = Substitution.fromJson(
           jsonDecode(existing.snapshotJson) as Map<String, dynamic>,
         );
-        final changed = _fieldDeltas(previousSub, currentSub).isNotEmpty;
-        if (changed) {
+        final deltas = _fieldDeltas(previousSub, currentSub);
+        if (deltas.isNotEmpty) {
           status = SubstitutionChangeType.modified.name;
           changeDetectedAt = capturedAt;
+          fieldDeltasJson = jsonEncode(
+            deltas.map((d) => d.toJson()).toList(),
+          );
         } else {
-          // Unchanged this round — keep whatever status/change timestamp
-          // was last recorded.
+          // Unchanged this round -- keep whatever status/change timestamp/
+          // deltas were last recorded, so a still-'modified' entry keeps
+          // showing what changed until it's modified again.
           status = existing.status;
           changeDetectedAt = existing.changeDetectedAt;
+          fieldDeltasJson = existing.fieldDeltasJson;
         }
       }
 
@@ -202,6 +209,7 @@ class SubstitutionDayHistoryStore implements SnapshotStore<SubstitutionDay> {
         firstSeen: existing?.firstSeen ?? capturedAt,
         lastSeen: capturedAt,
         changeDetectedAt: changeDetectedAt,
+        fieldDeltasJson: fieldDeltasJson,
       );
     }
 
@@ -221,6 +229,7 @@ class SubstitutionDayHistoryStore implements SnapshotStore<SubstitutionDay> {
         firstSeen: entry.firstSeen,
         lastSeen: entry.lastSeen,
         changeDetectedAt: capturedAt,
+        fieldDeltasJson: entry.fieldDeltasJson,
       );
     }
   }
@@ -319,10 +328,12 @@ List<SubstitutionChangeEvent>? _diffAndSaveDay({
 /// recently recorded status (feature plan 6, point 4: "Änderungsverlauf"
 /// screen).
 ///
-/// Unlike the events returned live from [runSubstitutionHistoryDiff], these
-/// do not carry [SubstitutionChangeEvent.fieldDeltas]: the table only
-/// persists the current snapshot plus the last-detected status, not a full
-/// delta history across every prior update.
+/// For a [SubstitutionChangeType.modified] entry,
+/// [SubstitutionChangeEvent.fieldDeltas] reflects the *most recent*
+/// change only — the table persists the current snapshot plus the last
+/// detected transition, not a full delta history across every prior
+/// update. An entry modified twice shows only what changed the second
+/// time, not a combined view of both changes.
 List<SubstitutionChangeEvent> loadSubstitutionHistoryEvents({
   required LanisDatabase database,
   required int accountId,
@@ -343,11 +354,18 @@ SubstitutionChangeEvent _rowToChangeEvent(SubstitutionHistoryRow row) {
     jsonDecode(row.snapshotJson) as Map<String, dynamic>,
   );
   final type = SubstitutionChangeType.values.byName(row.status);
+  final fieldDeltasJson = row.fieldDeltasJson;
+  final fieldDeltas = fieldDeltasJson == null
+      ? const <SubstitutionFieldDelta>[]
+      : (jsonDecode(fieldDeltasJson) as List)
+          .map((d) => SubstitutionFieldDelta.fromJson(d as Map<String, dynamic>))
+          .toList();
   return SubstitutionChangeEvent(
     type: type,
     entryKey: row.entryKey,
     tagEn: row.tagEn,
     current: type == SubstitutionChangeType.removed ? null : sub,
     previous: type == SubstitutionChangeType.removed ? sub : null,
+    fieldDeltas: fieldDeltas,
   );
 }

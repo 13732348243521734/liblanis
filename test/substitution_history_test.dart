@@ -300,6 +300,7 @@ void main() {
       );
       var rows = db.getSubstitutionHistoryRows(accountId: accountId, tagEn: tagEn);
       expect(rows.single.status, 'added');
+      expect(rows.single.fieldDeltasJson, isNull);
 
       // Unchanged second fetch: status should NOT revert, last_seen advances.
       runSubstitutionHistoryDiff(
@@ -312,7 +313,7 @@ void main() {
       expect(rows.single.status, 'added');
       expect(rows.single.lastSeen, DateTime(2026, 9, 1, 9));
 
-      // Room changes: status flips to modified.
+      // Room changes: status flips to modified, delta is persisted.
       final v2 = SubstitutionDay(
         parsedDate: '01.09.2026',
         substitutions: [_sub(tagEn: tagEn, raum: '202')],
@@ -325,6 +326,75 @@ void main() {
       );
       rows = db.getSubstitutionHistoryRows(accountId: accountId, tagEn: tagEn);
       expect(rows.single.status, 'modified');
+      expect(rows.single.fieldDeltasJson, isNotNull);
+
+      // Unchanged again: the persisted delta from the last real change
+      // must survive, not get cleared just because nothing changed now.
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [v2],
+        capturedAt: DateTime(2026, 9, 1, 11),
+      );
+      rows = db.getSubstitutionHistoryRows(accountId: accountId, tagEn: tagEn);
+      expect(rows.single.status, 'modified');
+      expect(rows.single.fieldDeltasJson, isNotNull);
+    });
+
+    test('loadSubstitutionHistoryEvents surfaces the persisted field deltas for modified entries', () {
+      final tagEn = '2026-09-01';
+      final v1 = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [_sub(tagEn: tagEn, raum: '101')],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [v1],
+        capturedAt: DateTime(2026, 9, 1, 8),
+      );
+      final v2 = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [_sub(tagEn: tagEn, raum: '202')],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [v2],
+        capturedAt: DateTime(2026, 9, 1, 9),
+      );
+
+      final events = loadSubstitutionHistoryEvents(
+        database: db,
+        accountId: accountId,
+      );
+      expect(events, hasLength(1));
+      expect(events.single.type, SubstitutionChangeType.modified);
+      expect(events.single.fieldDeltas, hasLength(1));
+      expect(events.single.fieldDeltas.single.field, 'raum');
+      expect(events.single.fieldDeltas.single.oldValue, '101');
+      expect(events.single.fieldDeltas.single.newValue, '202');
+    });
+
+    test('loadSubstitutionHistoryEvents returns no field deltas for a purely added entry', () {
+      final tagEn = '2026-09-01';
+      final v1 = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [_sub(tagEn: tagEn)],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [v1],
+        capturedAt: DateTime(2026, 9, 1, 8),
+      );
+
+      final events = loadSubstitutionHistoryEvents(
+        database: db,
+        accountId: accountId,
+      );
+      expect(events.single.type, SubstitutionChangeType.added);
+      expect(events.single.fieldDeltas, isEmpty);
     });
 
     test('removal keeps the row with status removed and does not bump last_seen', () {
