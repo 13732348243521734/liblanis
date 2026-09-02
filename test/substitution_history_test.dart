@@ -10,6 +10,7 @@ Substitution _sub({
   String? raum = '101',
   String? vertreter,
   String? hinweis,
+  String? klasse,
 }) => Substitution(
   tag: tag,
   tag_en: tagEn,
@@ -19,6 +20,7 @@ Substitution _sub({
   raum: raum,
   vertreter: vertreter,
   hinweis: hinweis,
+  klasse: klasse,
 );
 
 void main() {
@@ -28,9 +30,43 @@ void main() {
       expect(substitutionHistoryKey(s), 'Müller|Mathe|3');
     });
 
-    test('null lehrer/fach become empty segments', () {
-      final s = _sub(lehrer: null, fach: null, stunde: '3');
-      expect(substitutionHistoryKey(s), '||3');
+    test('lehrer or fach present -> klasse not appended, even if set', () {
+      final s = _sub(lehrer: 'Müller', fach: null, stunde: '3', klasse: '7a');
+      expect(substitutionHistoryKey(s), 'Müller||3');
+    });
+
+    test('lehrer AND fach both null -> falls back to appending klasse', () {
+      final s = _sub(lehrer: null, fach: null, stunde: '3', klasse: '7a');
+      expect(substitutionHistoryKey(s), '||3|7a');
+    });
+
+    test('lehrer AND fach both null, klasse also null -> stable empty segment', () {
+      final s = _sub(lehrer: null, fach: null, stunde: '3', klasse: null);
+      expect(substitutionHistoryKey(s), '||3|');
+    });
+
+    test('regression: two empty-lehrer/fach entries for different classes no longer collide', () {
+      final classA = _sub(lehrer: null, fach: null, stunde: '3', klasse: '7a');
+      final classB = _sub(lehrer: null, fach: null, stunde: '3', klasse: '7b');
+      expect(
+        substitutionHistoryKey(classA),
+        isNot(substitutionHistoryKey(classB)),
+      );
+
+      final previous = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [classA, classB],
+      );
+      final current = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [classA], // classB's substitution is gone
+      );
+      final events = diffSubstitutionDay(previous, current);
+      // Both entries must have been tracked independently: classB missing
+      // is a real 'removed' event, not silently absorbed by classA's key.
+      expect(events, hasLength(1));
+      expect(events!.single.type, SubstitutionChangeType.removed);
+      expect(events.single.previous?.klasse, '7b');
     });
   });
 
