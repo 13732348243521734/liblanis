@@ -87,7 +87,22 @@ class SubstitutionChangeEvent {
 /// `lehrer + "|" + fach + "|" + stunde`. Null `lehrer`/`fach` become empty
 /// strings so the key stays stable and comparable.
 ///
+/// Found in review: with both `lehrer` and `fach` empty (e.g. two
+/// "entfällt" rows for different classes at the same period, with no
+/// teacher/subject info), the base key alone collides and one entry
+/// silently overwrites the other in the matching maps. In that specific
+/// case only, `klasse` is appended to disambiguate — the common case
+/// (lehrer or fach present) is unaffected, so this doesn't invalidate
+/// existing history for the vast majority of entries.
+///
 /// No `_alt`-field matching — confirmed unused at the source school
 /// (feature plan 4.5 / 6).
-String substitutionHistoryKey(Substitution s) =>
-    '${s.lehrer ?? ''}|${s.fach ?? ''}|${s.stunde}';
+String substitutionHistoryKey(Substitution s) {
+  final lehrer = s.lehrer ?? '';
+  final fach = s.fach ?? '';
+  final base = '$lehrer|$fach|${s.stunde}';
+  if (lehrer.isEmpty && fach.isEmpty) {
+    return '$base|${s.klasse ?? ''}';
+  }
+  return base;
+}
