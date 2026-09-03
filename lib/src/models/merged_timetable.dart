@@ -71,6 +71,17 @@ class DisplayLessonHour {
     this.overlay,
   });
 
+  /// Returns a copy with [overlay] replaced. Used by the matching step
+  /// (plan 7.2) to attach a resolved [LessonOverlay] onto an hour that was
+  /// decomposed without one.
+  DisplayLessonHour withOverlay(LessonOverlay? overlay) => DisplayLessonHour(
+    stunde: stunde,
+    fach: fach,
+    lehrer: lehrer,
+    raum: raum,
+    overlay: overlay,
+  );
+
   @override
   String toString() =>
       'DisplayLessonHour(stunde: $stunde, fach: $fach, lehrer: $lehrer, '

@@ -16,6 +16,7 @@ export 'src/applets/study_groups/parser.dart';
 export 'src/applets/substitutions/history.dart';
 export 'src/applets/substitutions/parser.dart';
 export 'src/applets/timetable/merge.dart';
+export 'src/applets/timetable/overlay.dart';
 export 'src/applets/timetable/parser.dart';
 export 'src/config.dart';
 export 'src/connection/connection_checker.dart';
