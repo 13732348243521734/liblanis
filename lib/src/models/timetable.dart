@@ -210,6 +210,19 @@ class TimeTableData {
   late final String? weekBadge;
   List<TimetableDay> timetableDays = [];
 
+  /// The original weekday index (`0` = Monday, `1` = Tuesday, …) that each
+  /// entry in [timetableDays] came from, *before* empty days were filtered
+  /// out below. Same length and order as [timetableDays] — read them
+  /// together, e.g. `weekdayIndices[i]` is the weekday for
+  /// `timetableDays[i]`.
+  ///
+  /// Needed because [timetableDays] drops empty days entirely: without
+  /// this, a caller can't reliably turn a surviving day's list position
+  /// back into "which weekday is this" (e.g. to look up that day's actual
+  /// calendar date or its substitution-plan entries) whenever any day in
+  /// the week has zero lessons.
+  List<int> weekdayIndices = [];
+
   bool isCurrentWeek(TimetableSubject lesson, bool sameWeek) {
     return (weekBadge == null ||
             weekBadge == '' ||
@@ -249,6 +262,7 @@ class TimeTableData {
     }
 
     List<dynamic>? hiddenLessons = settings['hidden-lessons'];
+    final allDays = <TimetableDay>[];
     for (var day in data) {
       List<TimetableSubject> dayData = [];
       for (var subject in day) {
@@ -257,12 +271,15 @@ class TimeTableData {
           dayData.add(subject);
         }
       }
-      timetableDays.add(dayData);
+      allDays.add(dayData);
     }
 
-    timetableDays = timetableDays
-        .where((TimetableDay day) => day.isNotEmpty)
-        .toList();
+    for (var (weekday, day) in allDays.indexed) {
+      if (day.isNotEmpty) {
+        timetableDays.add(day);
+        weekdayIndices.add(weekday);
+      }
+    }
   }
 }
 
