@@ -206,6 +206,40 @@ void main() {
     });
   });
 
+  group('id threading (decompose -> merge)', () {
+    test('decomposeTimetableSubjects carries the original id onto each hour', () {
+      final hours = decomposeTimetableSubjects([
+        _subject(id: 'lesson-42', duration: 2, stunde: 3),
+      ]);
+      expect(hours.every((h) => h.id == 'lesson-42'), isTrue);
+    });
+
+    test('a merged block keeps the id of its first hour', () {
+      final blocks = buildDisplayBlocksForDay(
+        subjects: [_subject(id: 'lesson-42', name: 'Mathe', stunde: 3, duration: 2)],
+        substitutions: const [],
+      );
+      expect(blocks, hasLength(1));
+      expect(blocks.single.id, 'lesson-42');
+    });
+
+    test(
+      'two separately-entered identical single-hour subjects with different ids still merge, keeping the first id',
+      () {
+        final blocks = buildDisplayBlocksForDay(
+          subjects: [
+            _subject(id: 'row-a', name: 'Mathe', stunde: 3, duration: 1),
+            _subject(id: 'row-b', name: 'Mathe', stunde: 4, duration: 1),
+          ],
+          substitutions: const [],
+        );
+        expect(blocks, hasLength(1));
+        expect(blocks.single.stunden, [3, 4]);
+        expect(blocks.single.id, 'row-a');
+      },
+    );
+  });
+
   group('buildDisplayBlocksForDay (end-to-end)', () {
     test('double period, matching substitution consistent on both hours -> merges', () {
       final blocks = buildDisplayBlocksForDay(

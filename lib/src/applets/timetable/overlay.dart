@@ -38,6 +38,7 @@ List<DisplayLessonHour> decomposeTimetableSubjects(
           fach: name,
           lehrer: subject.lehrer,
           raum: subject.raum,
+          id: subject.id,
         ),
       );
     }

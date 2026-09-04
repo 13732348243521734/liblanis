@@ -1,3 +1,5 @@
+import 'timetable.dart';
+
 /// The substitution-driven overlay resolved for a single decomposed
 /// timetable hour (feature plan 7.2 matching + 7.3 display rules).
 ///
@@ -63,12 +65,20 @@ class DisplayLessonHour {
   final String? raum;
   final LessonOverlay? overlay;
 
+  /// The originating `TimetableSubject.id` this hour was decomposed from,
+  /// if known. Not used by matching or merging (id differences never
+  /// prevent a merge) — carried through purely so a consuming app can
+  /// preserve id-keyed settings (hidden lessons, custom colors) after
+  /// decomposing/re-merging.
+  final String? id;
+
   const DisplayLessonHour({
     required this.stunde,
     required this.fach,
     this.lehrer,
     this.raum,
     this.overlay,
+    this.id,
   });
 
   /// Returns a copy with [overlay] replaced. Used by the matching step
@@ -80,6 +90,7 @@ class DisplayLessonHour {
     lehrer: lehrer,
     raum: raum,
     overlay: overlay,
+    id: id,
   );
 
   @override
@@ -102,12 +113,19 @@ class MergedLessonBlock {
   final String? raum;
   final LessonOverlay? overlay;
 
+  /// The originating `TimetableSubject.id` of the *first* merged hour, if
+  /// known — see [DisplayLessonHour.id]. A real rowspan-based double
+  /// period already only ever had one id to begin with, so using the
+  /// first hour's id as the block's representative id matches that.
+  final String? id;
+
   const MergedLessonBlock({
     required this.stunden,
     required this.fach,
     this.lehrer,
     this.raum,
     this.overlay,
+    this.id,
   });
 
   int get startStunde => stunden.first;
