@@ -48,6 +48,7 @@ List<MergedLessonBlock> mergeConsecutiveHours(List<DisplayLessonHour> hours) {
           lehrer: previous.lehrer,
           raum: previous.raum,
           overlay: previous.overlay,
+          id: previous.id,
         ),
       );
     } else {
@@ -58,6 +59,7 @@ List<MergedLessonBlock> mergeConsecutiveHours(List<DisplayLessonHour> hours) {
           lehrer: hour.lehrer,
           raum: hour.raum,
           overlay: hour.overlay,
+          id: hour.id,
         ),
       );
     }
