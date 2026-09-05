@@ -131,6 +131,11 @@ class MergedLessonBlock {
   int get startStunde => stunden.first;
   int get endStunde => stunden.last;
 
+  /// Alias for [fach], so a [MergedLessonBlock] can be used anywhere a
+  /// `TimetableSubject`-shaped `.name`/`.id` pair is expected via duck
+  /// typing (e.g. `TimeTableHelper.getColorForLesson`).
+  String get name => fach;
+
   /// Whether this block is the result of an actual merge (`true`) or is
   /// just a single, unmerged hour (`false`).
   bool get isMerged => stunden.length > 1;
