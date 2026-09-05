@@ -172,6 +172,14 @@ void main() {
     });
   });
 
+  group('MergedLessonBlock.name', () {
+    test('aliases fach', () {
+      final blocks = mergeConsecutiveHours([_hour(stunde: 3, fach: 'Physik')]);
+      expect(blocks.single.name, 'Physik');
+      expect(blocks.single.name, blocks.single.fach);
+    });
+  });
+
   group('LessonOverlay equality', () {
     test('two overlays with identical fields are equal', () {
       const a = LessonOverlay(vertreter: 'X', substituteRaum: 'Y', isEva: true, hinweis: 'Z');
