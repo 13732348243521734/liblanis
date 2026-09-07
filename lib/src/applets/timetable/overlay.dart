@@ -132,6 +132,13 @@ List<int> _parseStundeRange(String stunde) {
 ///     encoded in this model), but substituteRaum is deliberately left
 ///     unset in that case since an EVA entry's `raum` field isn't a real
 ///     replacement room.
+///   - the match's `art` or `hinweis` contains a cancellation keyword
+///     ("entfäll"/"entfall"/"ausfall", case-insensitive) ->
+///     overlay.isCancelled. This is a **best-effort heuristic**, not a
+///     confirmed enum value from the school portal — there was no real
+///     "Entfall" sample data available to pin the exact string down.
+///     Verify against real data and adjust [_cancellationKeywords] if it
+///     doesn't fire (or fires too eagerly).
 ///   - the match's `raum` differs from [originalRaum] (and isn't EVA) ->
 ///     overlay.substituteRaum. A substitution entry that just restates
 ///     the same room is *not* a room change.
@@ -151,6 +158,8 @@ LessonOverlay? matchOverlayForHour({
   if (match == null) return null;
 
   final isEva = match.raum == 'EVA' || match.hinweis == 'EVA';
+  final isCancelled = !isEva && _looksCancelled(match.art, match.hinweis);
+
   final vertreter = (match.vertreter != null && match.vertreter!.isNotEmpty)
       ? match.vertreter
       : null;
@@ -171,8 +180,19 @@ LessonOverlay? matchOverlayForHour({
     vertreter: vertreter,
     substituteRaum: substituteRaum,
     isEva: isEva,
+    isCancelled: isCancelled,
     hinweis: hinweis,
   );
+}
+
+/// Keywords checked case-insensitively against `art`/`hinweis` to detect
+/// a cancelled lesson. Best-effort — adjust if real data uses different
+/// wording (e.g. "Ausfall", "fällt aus", a dedicated `art` code).
+const _cancellationKeywords = ['entfäll', 'entfall', 'ausfall', 'fällt aus'];
+
+bool _looksCancelled(String? art, String? hinweis) {
+  final haystack = '${art ?? ''} ${hinweis ?? ''}'.toLowerCase();
+  return _cancellationKeywords.any(haystack.contains);
 }
 
 /// End-to-end pipeline for a single day (feature plan 7.1 steps 1–3 /

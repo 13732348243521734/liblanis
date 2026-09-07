@@ -26,6 +26,7 @@ Substitution _sub({
   String? fach = 'Mathe',
   String? raum,
   String? hinweis,
+  String? art,
 }) => Substitution(
   tag: '01.09.2026',
   tag_en: '2026-09-01',
@@ -34,6 +35,7 @@ Substitution _sub({
   fach: fach,
   raum: raum,
   hinweis: hinweis,
+  art: art,
 );
 
 void main() {
@@ -203,6 +205,47 @@ void main() {
         substitutions: [_sub(stunde: '3', vertreter: '')],
       );
       expect(overlay!.vertreter, isNull);
+    });
+
+    test('art containing "entfällt" -> isCancelled true', () {
+      final overlay = matchOverlayForHour(
+        stunde: 3,
+        fach: 'Mathe',
+        originalRaum: '101',
+        substitutions: [_sub(stunde: '3', art: 'Entfällt')],
+      );
+      expect(overlay!.isCancelled, isTrue);
+    });
+
+    test('hinweis containing "Ausfall" (case-insensitive) -> isCancelled true', () {
+      final overlay = matchOverlayForHour(
+        stunde: 3,
+        fach: 'Mathe',
+        originalRaum: '101',
+        substitutions: [_sub(stunde: '3', hinweis: 'wegen AUSFALL der Lehrkraft')],
+      );
+      expect(overlay!.isCancelled, isTrue);
+    });
+
+    test('EVA takes priority over cancellation wording', () {
+      final overlay = matchOverlayForHour(
+        stunde: 3,
+        fach: 'Mathe',
+        originalRaum: '101',
+        substitutions: [_sub(stunde: '3', raum: 'EVA', art: 'Entfall')],
+      );
+      expect(overlay!.isEva, isTrue);
+      expect(overlay.isCancelled, isFalse);
+    });
+
+    test('no cancellation keyword -> isCancelled false', () {
+      final overlay = matchOverlayForHour(
+        stunde: 3,
+        fach: 'Mathe',
+        originalRaum: '101',
+        substitutions: [_sub(stunde: '3', vertreter: 'Frau Schmidt')],
+      );
+      expect(overlay!.isCancelled, isFalse);
     });
   });
 

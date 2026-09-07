@@ -21,6 +21,13 @@ class LessonOverlay {
   /// the merge-equality check below like any other overlay field.
   final bool isEva;
 
+  /// The lesson was cancelled outright ("Entfall"/"entfällt"), detected
+  /// heuristically from the matched substitution's `art`/`hinweis` text
+  /// -- see [matchOverlayForHour]. This is a best-effort keyword match,
+  /// not a confirmed enum from the school portal; verify it actually
+  /// fires against real data and adjust the keyword list if not.
+  final bool isCancelled;
+
   /// Free-text note from the substitution entry, if any.
   final String? hinweis;
 
@@ -28,6 +35,7 @@ class LessonOverlay {
     this.vertreter,
     this.substituteRaum,
     this.isEva = false,
+    this.isCancelled = false,
     this.hinweis,
   });
 
@@ -38,6 +46,7 @@ class LessonOverlay {
       return vertreter == other.vertreter &&
           substituteRaum == other.substituteRaum &&
           isEva == other.isEva &&
+          isCancelled == other.isCancelled &&
           hinweis == other.hinweis;
     }
     return false;
@@ -46,7 +55,7 @@ class LessonOverlay {
   @override
   String toString() =>
       'LessonOverlay(vertreter: $vertreter, substituteRaum: $substituteRaum, '
-      'isEva: $isEva, hinweis: $hinweis)';
+      'isEva: $isEva, isCancelled: $isCancelled, hinweis: $hinweis)';
 }
 
 /// One already-decomposed (single-period) timetable hour, with any
