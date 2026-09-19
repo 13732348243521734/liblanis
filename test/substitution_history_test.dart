@@ -525,4 +525,117 @@ void main() {
       expect(events.last.tagEn, '2026-09-01');
     });
   });
+
+  group('loadSubstitutionDayForDisplay', () {
+    late LanisDatabase db;
+    const accountId = 1;
+
+    setUp(() async {
+      db = LanisDatabase.open();
+      await db.addAccount(
+        schoolId: 1,
+        schoolName: 'S',
+        username: 'u',
+        password: 'p',
+      );
+    });
+
+    tearDown(() {
+      db.dispose();
+    });
+
+    test('no history for that day -> null', () {
+      final result = loadSubstitutionDayForDisplay(
+        database: db,
+        accountId: accountId,
+        tagEn: '2026-09-01',
+      );
+      expect(result, isNull);
+    });
+
+    test('reconstructs still-active entries, drops removed ones', () {
+      final day = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [
+          _sub(tagEn: '2026-09-01', stunde: '3', fach: 'Mathe'),
+          _sub(tagEn: '2026-09-01', stunde: '5', fach: 'Physik'),
+        ],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [day],
+        capturedAt: DateTime(2026, 9, 1, 7),
+      );
+
+      // Next fetch (still the same day, e.g. a later refresh): Physik/5
+      // is gone from the live plan again -> gets marked 'removed', Mathe/3
+      // stays.
+      final dayAfter = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [
+          _sub(tagEn: '2026-09-01', stunde: '3', fach: 'Mathe'),
+        ],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [dayAfter],
+        capturedAt: DateTime(2026, 9, 1, 9),
+        windowDates: ['01.09.2026'],
+      );
+
+      final result = loadSubstitutionDayForDisplay(
+        database: db,
+        accountId: accountId,
+        tagEn: '2026-09-01',
+      );
+      expect(result, isNotNull);
+      expect(result!.substitutions, hasLength(1));
+      expect(result.substitutions.single.fach, 'Mathe');
+      expect(result.parsedDate, '01.09.2026');
+    });
+
+    test('Vertretung changed to Entfall on the same key -> latest state wins', () {
+      final added = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [
+          _sub(
+            tagEn: '2026-09-01',
+            stunde: '3',
+            fach: 'Mathe',
+            vertreter: 'Schmidt',
+          ),
+        ],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [added],
+        capturedAt: DateTime(2026, 9, 1, 7),
+      );
+
+      final becameEntfall = SubstitutionDay(
+        parsedDate: '01.09.2026',
+        substitutions: [
+          _sub(tagEn: '2026-09-01', stunde: '3', fach: 'Mathe', hinweis: 'Entfall'),
+        ],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [becameEntfall],
+        capturedAt: DateTime(2026, 9, 1, 9),
+      );
+
+      final result = loadSubstitutionDayForDisplay(
+        database: db,
+        accountId: accountId,
+        tagEn: '2026-09-01',
+      );
+      expect(result!.substitutions, hasLength(1));
+      expect(result.substitutions.single.hinweis, 'Entfall');
+      expect(result.substitutions.single.vertreter, isNull);
+    });
+  });
 }

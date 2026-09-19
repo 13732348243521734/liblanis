@@ -235,6 +235,41 @@ class SubstitutionDayHistoryStore implements SnapshotStore<SubstitutionDay> {
   }
 }
 
+/// Reconstructs the last-known substitution state for [tagEn] straight
+/// from `substitution_history`, for days the live plan no longer covers
+/// (feature plan 7.5: the school portal only exposes tabs for
+/// today/upcoming days, so a day that has already passed this week is
+/// gone from the live fetch even though we saw it while it was current).
+///
+/// Only entries whose last known [SubstitutionChangeType] is *not*
+/// [SubstitutionChangeType.removed] are included -- a removed entry means
+/// it no longer applied by the last time we checked, so it shouldn't
+/// reappear when reconstructing "what the day actually looked like".
+/// Returns `null` if there's no history for that day at all (not the same
+/// as "history exists but is empty", which returns an empty list).
+SubstitutionDay? loadSubstitutionDayForDisplay({
+  required LanisDatabase database,
+  required int accountId,
+  required String tagEn,
+}) {
+  final rows = database.getSubstitutionHistoryRows(
+    accountId: accountId,
+    tagEn: tagEn,
+  );
+  if (rows.isEmpty) return null;
+  final substitutions = [
+    for (final row in rows)
+      if (row.status != SubstitutionChangeType.removed.name)
+        Substitution.fromJson(
+          jsonDecode(row.snapshotJson) as Map<String, dynamic>,
+        ),
+  ];
+  return SubstitutionDay(
+    parsedDate: tagEnToParsedDate(tagEn),
+    substitutions: substitutions,
+  );
+}
+
 /// Runs the history diff/save for every day in [days] and returns all
 /// detected change events across days (feature plan 6.2, point 2).
 ///

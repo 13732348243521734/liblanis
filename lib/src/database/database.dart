@@ -580,6 +580,110 @@ class LanisDatabase {
       fieldDeltasJson: row['field_deltas_json'] as String?,
     );
   }
+
+  // —— Timetable history (Feature 2.5, plan 7.5) ——
+  //
+  // One row per (account, valid_from_date) -- valid_from_date is the Monday
+  // of the week for which timetable_json was captured. Rows are only ever
+  // written when the content actually differs from the most recent one
+  // (see TimeTableSnapshotStore.save in applets/timetable/history.dart),
+  // so a week with no changes simply has no row of its own; looking up a
+  // past week falls back to the most recent row at-or-before it.
+
+  /// Most recent row for [accountId], regardless of week -- used as the
+  /// "last known snapshot" for diffing on the next fetch.
+  TimetableHistoryRow? getLatestTimetableHistoryRow({
+    required int accountId,
+  }) {
+    final rows = _db.select(
+      '''
+      SELECT valid_from_date, timetable_json, captured_at
+      FROM timetable_history
+      WHERE account_id = ?
+      ORDER BY valid_from_date DESC
+      LIMIT 1
+      ''',
+      [accountId],
+    );
+    if (rows.isEmpty) return null;
+    return _rowToTimetableHistoryRow(rows.first);
+  }
+
+  /// The row whose `valid_from_date` is the closest one at-or-before
+  /// [weekMonday] -- i.e. "the plan as it looked during that week"
+  /// (feature plan 7.5: "zuletzt gültiger Snapshot vor/an diesem Datum").
+  TimetableHistoryRow? getTimetableHistoryRowAtOrBefore({
+    required int accountId,
+    required DateTime weekMonday,
+  }) {
+    final rows = _db.select(
+      '''
+      SELECT valid_from_date, timetable_json, captured_at
+      FROM timetable_history
+      WHERE account_id = ? AND valid_from_date <= ?
+      ORDER BY valid_from_date DESC
+      LIMIT 1
+      ''',
+      [accountId, _dateOnly(weekMonday)],
+    );
+    if (rows.isEmpty) return null;
+    return _rowToTimetableHistoryRow(rows.first);
+  }
+
+  /// Earliest `valid_from_date` on record, or `null` if there's no history
+  /// yet. Used by the app to know how far back "previous week" navigation
+  /// can go without hitting a week nothing is stored for.
+  DateTime? getEarliestTimetableHistoryDate({required int accountId}) {
+    final rows = _db.select(
+      '''
+      SELECT valid_from_date
+      FROM timetable_history
+      WHERE account_id = ?
+      ORDER BY valid_from_date ASC
+      LIMIT 1
+      ''',
+      [accountId],
+    );
+    if (rows.isEmpty) return null;
+    return DateTime.parse(rows.first['valid_from_date'] as String);
+  }
+
+  void upsertTimetableHistoryEntry({
+    required int accountId,
+    required DateTime validFromDate,
+    required String timetableJson,
+    required DateTime capturedAt,
+  }) {
+    _db.execute(
+      '''
+      INSERT INTO timetable_history (
+        account_id, valid_from_date, timetable_json, captured_at
+      ) VALUES (?, ?, ?, ?)
+      ON CONFLICT(account_id, valid_from_date) DO UPDATE SET
+        timetable_json = excluded.timetable_json,
+        captured_at = excluded.captured_at
+      ''',
+      [
+        accountId,
+        _dateOnly(validFromDate),
+        timetableJson,
+        capturedAt.toIso8601String(),
+      ],
+    );
+  }
+
+  static String _dateOnly(DateTime date) {
+    final d = DateTime(date.year, date.month, date.day);
+    return d.toIso8601String().substring(0, 10);
+  }
+
+  TimetableHistoryRow _rowToTimetableHistoryRow(Row row) {
+    return (
+      validFromDate: DateTime.parse(row['valid_from_date'] as String),
+      timetableJson: row['timetable_json'] as String,
+      capturedAt: DateTime.parse(row['captured_at'] as String),
+    );
+  }
 }
 
 /// Raw persisted row for a single substitution-history entry.
@@ -596,4 +700,11 @@ typedef SubstitutionHistoryRow = ({
   /// [SubstitutionChangeType.modified] transition, or `null` if this entry
   /// has never been modified (only added/removed).
   String? fieldDeltasJson,
+});
+
+/// Raw persisted row for a single timetable-history snapshot.
+typedef TimetableHistoryRow = ({
+  DateTime validFromDate,
+  String timetableJson,
+  DateTime capturedAt,
 });

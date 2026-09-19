@@ -10,6 +10,7 @@ import '../../models/timetable.dart';
 import '../applet_context.dart';
 import '../applet_parser.dart';
 import '../definition.dart';
+import 'history.dart';
 
 class TimetableStudentParser extends AppletParser<TimeTable> {
   TimetableStudentParser(
@@ -26,7 +27,26 @@ class TimetableStudentParser extends AppletParser<TimeTable> {
   Future<TimeTable> getHome() async {
     final Document? document = await getTimetableDocument();
     if (document == null) throw NetworkException();
-    return parseDocument(document);
+    final timetable = parseDocument(document);
+
+    // Feature 2.5 (Stundenplanhistorie, plan 7.5): record this fetch as a
+    // new history snapshot if -- and only if -- it actually differs from
+    // the last one on file. Deliberately non-fatal: a history-write
+    // failure (e.g. a locked DB) must never take down the main timetable
+    // fetch, which is why this is wrapped separately rather than left to
+    // propagate.
+    try {
+      runTimetableHistoryDiff(
+        database: ctx.database,
+        accountId: ctx.accountId,
+        current: timetable,
+        capturedAt: DateTime.now(),
+      );
+    } catch (_) {
+      // Swallowed deliberately -- see comment above.
+    }
+
+    return timetable;
   }
 
   /// Offline/fixture entry point used by tests and [getHome].
