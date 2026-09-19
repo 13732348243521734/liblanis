@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:liblanis/liblanis.dart';
 import 'package:test/test.dart';
 
@@ -636,6 +638,169 @@ void main() {
       expect(result!.substitutions, hasLength(1));
       expect(result.substitutions.single.hinweis, 'Entfall');
       expect(result.substitutions.single.vertreter, isNull);
+    });
+  });
+
+  group('tag_en bucketing (regression: dd_MM_yyyy vs yyyy-MM-dd)', () {
+    late LanisDatabase db;
+    const accountId = 1;
+
+    setUp(() async {
+      db = LanisDatabase.open();
+      await db.addAccount(
+        schoolId: 1,
+        schoolName: 'S',
+        username: 'u',
+        password: 'p',
+      );
+    });
+
+    tearDown(() {
+      db.dispose();
+    });
+
+    test('a day with substitutions is bucketed as yyyy-MM-dd, not the '
+        "substitution's own raw dd_MM_yyyy tag_en", () {
+      // Substitution.tag_en deliberately set to the portal's internal
+      // AJAX-key shape here, the way the real parser actually produces
+      // it -- this is what runSubstitutionHistoryDiff must *not* use
+      // directly as the storage bucket key anymore.
+      final day = SubstitutionDay(
+        parsedDate: '08.09.2026',
+        substitutions: [
+          _sub(tag: '08.09.2026', tagEn: '08_09_2026', stunde: '3'),
+        ],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [day],
+        capturedAt: DateTime(2026, 9, 8, 8),
+      );
+
+      // Findable by the documented yyyy-MM-dd bucket key ...
+      final byCorrectKey = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '2026-09-08',
+      );
+      expect(byCorrectKey, hasLength(1));
+
+      // ... and *not* stored under the substitution's own raw tag_en.
+      final byRawSubstitutionTagEn = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '08_09_2026',
+      );
+      expect(byRawSubstitutionTagEn, isEmpty);
+    });
+
+    test('loadSubstitutionDayForDisplay finds a day with substitutions '
+        'by its yyyy-MM-dd date, matching how the timetable week view '
+        'looks it up', () {
+      final day = SubstitutionDay(
+        parsedDate: '08.09.2026',
+        substitutions: [
+          _sub(tag: '08.09.2026', tagEn: '08_09_2026', stunde: '3'),
+        ],
+      );
+      runSubstitutionHistoryDiff(
+        database: db,
+        accountId: accountId,
+        days: [day],
+        capturedAt: DateTime(2026, 9, 8, 8),
+      );
+
+      final result = loadSubstitutionDayForDisplay(
+        database: db,
+        accountId: accountId,
+        tagEn: '2026-09-08',
+      );
+      expect(result, isNotNull);
+      expect(result!.substitutions, hasLength(1));
+    });
+  });
+
+  group('LanisDatabase._migrateLegacyTagEnFormat', () {
+    test('normalizes a pre-existing dd_MM_yyyy row to yyyy-MM-dd on the '
+        'next open, and leaves already-correct rows alone', () async {
+      final path =
+          '${Directory.systemTemp.path}/liblanis_tagen_migration_test_'
+          '${DateTime.now().microsecondsSinceEpoch}.db';
+      addTearDown(() {
+        final f = File(path);
+        if (f.existsSync()) f.deleteSync();
+      });
+
+      var db = LanisDatabase.open(
+        path: path,
+        secretStore: MemorySecretStore(),
+      );
+      final accountId = await db.addAccount(
+        schoolId: 1,
+        schoolName: 'S',
+        username: 'u',
+        password: 'p',
+      );
+
+      // A legacy row, written the way the pre-fix code actually wrote
+      // one for a day with substitutions.
+      db.upsertSubstitutionHistoryEntry(
+        accountId: accountId,
+        entryKey: 'Müller|Mathe|3',
+        tagEn: '08_09_2026',
+        stunde: '3',
+        snapshotJson: '{}',
+        status: 'added',
+        firstSeen: DateTime(2026, 9, 8),
+        lastSeen: DateTime(2026, 9, 8),
+      );
+      // An already-correct row (e.g. from an empty-day windowDates entry)
+      // -- must be left exactly as-is, not touched or duplicated.
+      db.upsertSubstitutionHistoryEntry(
+        accountId: accountId,
+        entryKey: 'Schmidt|Deutsch|1',
+        tagEn: '2026-09-09',
+        stunde: '1',
+        snapshotJson: '{}',
+        status: 'added',
+        firstSeen: DateTime(2026, 9, 9),
+        lastSeen: DateTime(2026, 9, 9),
+      );
+      db.dispose();
+
+      // Reopening re-runs _migrate(), which should normalize the legacy
+      // row in place.
+      db = LanisDatabase.open(path: path, secretStore: MemorySecretStore());
+
+      final migrated = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '2026-09-08',
+      );
+      expect(migrated, hasLength(1));
+      expect(migrated.single.entryKey, 'Müller|Mathe|3');
+
+      final oldKeyGone = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '08_09_2026',
+      );
+      expect(oldKeyGone, isEmpty);
+
+      final untouched = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '2026-09-09',
+      );
+      expect(untouched, hasLength(1));
+      expect(untouched.single.entryKey, 'Schmidt|Deutsch|1');
+
+      // Idempotency: running the migration again (a third open) must not
+      // error or change anything further.
+      db.dispose();
+      db = LanisDatabase.open(path: path, secretStore: MemorySecretStore());
+      final stillMigrated = db.getSubstitutionHistoryRows(
+        accountId: accountId,
+        tagEn: '2026-09-08',
+      );
+      expect(stillMigrated, hasLength(1));
+      db.dispose();
     });
   });
 }

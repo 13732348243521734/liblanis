@@ -151,6 +151,50 @@ class LanisDatabase {
       column: 'field_deltas_json',
       definition: 'TEXT',
     );
+
+    _migrateLegacyTagEnFormat();
+  }
+
+  /// One-time, idempotent cleanup for a pre-existing bug (see the comment
+  /// on the tagEn derivation in `runSubstitutionHistoryDiff`,
+  /// applets/substitutions/history.dart): rows for a day that had at
+  /// least one substitution were bucketed under the substitution's own
+  /// raw `tag_en` (`dd_MM_yyyy`, e.g. "08_09_2026" -- the portal's
+  /// internal AJAX day key) instead of the documented `yyyy-MM-dd`
+  /// bucket format every other row already used. Both shapes ended up
+  /// side by side in the same table on real devices, silently breaking
+  /// any lookup by the correct `yyyy-MM-dd` key for a day that happens
+  /// to have substitutions (e.g. `loadSubstitutionDayForDisplay` for
+  /// past-week timetable navigation, plan 7.5) while the
+  /// "Änderungsverlauf" screen kept working (it never looks a row up by
+  /// key, only lists everything).
+  ///
+  /// `yyyy-MM-dd` never contains an underscore, `dd_MM_yyyy` always does
+  /// -- a reliable, cheap way to find just the rows written with the old
+  /// format without needing a separate schema-version flag. Runs on every
+  /// startup; a database with no such rows left (the normal case once
+  /// this has run once) is a single empty SELECT.
+  void _migrateLegacyTagEnFormat() {
+    final rows = _db.select(
+      "SELECT rowid, tag_en FROM substitution_history WHERE tag_en LIKE '%\\_%' ESCAPE '\\'",
+    );
+    for (final row in rows) {
+      final legacy = row['tag_en'] as String;
+      final parts = legacy.split('_');
+      if (parts.length != 3) continue;
+      final day = parts[0];
+      final month = parts[1];
+      final year = parts[2];
+      if (int.tryParse(day) == null ||
+          int.tryParse(month) == null ||
+          int.tryParse(year) == null) {
+        continue;
+      }
+      _db.execute(
+        'UPDATE substitution_history SET tag_en = ? WHERE rowid = ?',
+        ['$year-$month-$day', row['rowid']],
+      );
+    }
   }
 
   /// Adds [column] to [table] if it doesn't already exist. Existing

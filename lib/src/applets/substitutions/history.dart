@@ -304,9 +304,18 @@ List<SubstitutionChangeEvent> runSubstitutionHistoryDiff({
   final coveredTagEns = <String>{};
 
   for (final day in days) {
-    final tagEn = day.substitutions.isNotEmpty
-        ? day.substitutions.first.tag_en
-        : parsedDateToTagEn(day.parsedDate);
+    // Always derive the bucket key from day.parsedDate via
+    // parsedDateToTagEn (yyyy-MM-dd), never from a substitution's own
+    // tag_en -- that field is the raw AJAX day-key the portal uses
+    // internally (dd_MM_yyyy, e.g. "08_09_2026"), a different format
+    // that happened to end up stored here as the bucket key whenever a
+    // day had at least one substitution, while empty days correctly got
+    // yyyy-MM-dd via this same parsedDateToTagEn call below. That silent
+    // mix broke anything looking a specific day up by its documented
+    // yyyy-MM-dd key (e.g. past-week timetable navigation, plan 7.5) --
+    // see LanisDatabase._migrateLegacyTagEnFormat for the one-time
+    // cleanup of rows already written with the old, wrong format.
+    final tagEn = parsedDateToTagEn(day.parsedDate);
     if (tagEn == null || tagEn.isEmpty) continue;
     coveredTagEns.add(tagEn);
 
