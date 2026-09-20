@@ -19,7 +19,6 @@ export 'src/applets/timetable/history.dart';
 export 'src/applets/timetable/merge.dart';
 export 'src/applets/timetable/overlay.dart';
 export 'src/applets/timetable/parser.dart';
-export 'src/applets/timetable/redirect.dart';
 export 'src/config.dart';
 export 'src/connection/connection_checker.dart';
 export 'src/database/database.dart';

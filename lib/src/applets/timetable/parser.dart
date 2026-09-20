@@ -11,7 +11,6 @@ import '../applet_context.dart';
 import '../applet_parser.dart';
 import '../definition.dart';
 import 'history.dart';
-import 'redirect.dart';
 
 class TimetableStudentParser extends AppletParser<TimeTable> {
   TimetableStudentParser(
@@ -47,50 +46,6 @@ class TimetableStudentParser extends AppletParser<TimeTable> {
       // Swallowed deliberately -- see comment above.
     }
 
-    return timetable;
-  }
-
-  /// Live lookup for a week `timetable_history` doesn't have a snapshot
-  /// for -- the future, or a gap in the past that predates the app's own
-  /// tracking (plan 5.3 + 7.5's closing note: "Zukunft/Lücken werden live
-  /// per Redirect-Request nachgeladen und zusätzlich in timetable_history
-  /// gecacht"). [weekMonday] should be the Monday of the week wanted;
-  /// results are cached under that same week so a later lookup for it is
-  /// a synchronous [loadTimetableForWeek] instead of another network
-  /// round-trip.
-  ///
-  /// Throws [TimetableRedirectException] when the portal's own redirect
-  /// doesn't resolve cleanly for [weekMonday] (no k/e in the final URL,
-  /// too many hops, a redirect with no Location -- see
-  /// [fetchTimetableFor]'s doc comment for the full contract). Callers
-  /// should treat that the same as "no data for this week" rather than
-  /// letting it surface as a crash -- there's deliberately no fallback
-  /// guess here, per plan 5.3.
-  Future<TimeTable> fetchAndCacheTimetableForWeek(DateTime weekMonday) async {
-    final (document, target, finalUrl) = await fetchTimetableFor(
-      ctx: ctx,
-      date: weekMonday,
-    );
-    if (target == null) {
-      throw TimetableRedirectException(
-        'final URL is missing k and/or e for the requested week '
-        '(landed on: $finalUrl, page title: '
-        '${document.querySelector('title')?.text.trim()})',
-      );
-    }
-    final timetable = parseDocument(document);
-    try {
-      runTimetableHistoryDiff(
-        database: ctx.database,
-        accountId: ctx.accountId,
-        current: timetable,
-        capturedAt: weekMonday,
-      );
-    } catch (_) {
-      // Non-fatal, same reasoning as the getHome() hook above: a
-      // history-write failure must never take down a lookup the person
-      // is actively waiting on.
-    }
     return timetable;
   }
 
