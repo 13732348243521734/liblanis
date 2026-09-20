@@ -61,11 +61,16 @@ typedef TimetableRedirectStep = ({int statusCode, String? location, String body}
 /// when the final URL is simply missing `k` or `e` -- plan 5.3 explicitly
 /// wants that treated as "feature disabled for this date", with the
 /// caller deciding whether to still look at [Document] (e.g. its own
-/// `#all`/`#own` structure) or just give up. Genuinely unrecoverable hops
-/// (no `Location` on a redirect, or too many of them) throw
-/// [TimetableRedirectException] instead, since there's no document to
-/// return in those cases at all.
-Future<(Document, TimetableNavigationTarget?)> resolveTimetableRedirect({
+/// `#all`/`#own` structure) or just give up. The final [Uri] is always
+/// returned alongside it (even when `target` is `null`) so a caller that
+/// does give up can still log/report *where* the portal actually sent it
+/// -- otherwise "missing k/e" alone doesn't say whether that was a plain
+/// non-date-specific schedule page, a login page, an error page, or
+/// something else. Genuinely unrecoverable hops (no `Location` on a
+/// redirect, or too many of them) throw [TimetableRedirectException]
+/// instead, since there's no document or final URL to return in those
+/// cases at all.
+Future<(Document, TimetableNavigationTarget?, Uri)> resolveTimetableRedirect({
   required Uri startUrl,
   required Future<TimetableRedirectStep> Function(Uri url) fetch,
   int maxHops = 10,
@@ -98,7 +103,7 @@ Future<(Document, TimetableNavigationTarget?)> resolveTimetableRedirect({
 
   final document = parse(step.body);
   final target = _parseNavigationTarget(currentUrl);
-  return (document, target);
+  return (document, target, currentUrl);
 }
 
 TimetableNavigationTarget? _parseNavigationTarget(Uri url) {
@@ -115,7 +120,7 @@ TimetableNavigationTarget? _parseNavigationTarget(Uri url) {
 /// future, and any gap in the past history hasn't covered. See
 /// [resolveTimetableRedirect] for the underlying algorithm and error
 /// contract; this just wires it up to [ctx]'s real HTTP session.
-Future<(Document, TimetableNavigationTarget?)> fetchTimetableFor({
+Future<(Document, TimetableNavigationTarget?, Uri)> fetchTimetableFor({
   required AppletContext ctx,
   required DateTime date,
 }) {

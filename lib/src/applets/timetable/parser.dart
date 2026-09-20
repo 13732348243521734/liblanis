@@ -67,13 +67,15 @@ class TimetableStudentParser extends AppletParser<TimeTable> {
   /// letting it surface as a crash -- there's deliberately no fallback
   /// guess here, per plan 5.3.
   Future<TimeTable> fetchAndCacheTimetableForWeek(DateTime weekMonday) async {
-    final (document, target) = await fetchTimetableFor(
+    final (document, target, finalUrl) = await fetchTimetableFor(
       ctx: ctx,
       date: weekMonday,
     );
     if (target == null) {
-      throw const TimetableRedirectException(
-        'final URL is missing k and/or e for the requested week',
+      throw TimetableRedirectException(
+        'final URL is missing k and/or e for the requested week '
+        '(landed on: $finalUrl, page title: '
+        '${document.querySelector('title')?.text.trim()})',
       );
     }
     final timetable = parseDocument(document);

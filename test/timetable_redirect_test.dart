@@ -28,7 +28,7 @@ void main() {
 
   group('resolveTimetableRedirect', () {
     test('single 302 with an absolute Location -> resolves k/e', () async {
-      final (document, target) = await resolveTimetableRedirect(
+      final (document, target, finalUrl) = await resolveTimetableRedirect(
         startUrl: startUrl,
         fetch: scripted([
           (
@@ -43,11 +43,15 @@ void main() {
       );
       expect(target, TimetableNavigationTarget(k: 'Ec', e: '42'));
       expect(document.body?.text, 'plan');
+      // The final URL is returned regardless of whether target resolved,
+      // so a caller can always report/log where the portal actually sent
+      // it -- see the doc comment for why.
+      expect(finalUrl.queryParameters['k'], 'Ec');
     });
 
     test('single 302 with a relative Location -> resolved against the '
         'previous URL', () async {
-      final (_, target) = await resolveTimetableRedirect(
+      final (_, target, _) = await resolveTimetableRedirect(
         startUrl: startUrl,
         fetch: scripted([
           (
@@ -62,7 +66,7 @@ void main() {
     });
 
     test('multiple 302s in a row -> follows through to the final k/e', () async {
-      final (_, target) = await resolveTimetableRedirect(
+      final (_, target, _) = await resolveTimetableRedirect(
         startUrl: startUrl,
         fetch: scripted([
           (
@@ -84,7 +88,7 @@ void main() {
 
     test('no redirect at all -> document returned, target null (no k/e '
         'in the query we sent)', () async {
-      final (document, target) = await resolveTimetableRedirect(
+      final (document, target, _) = await resolveTimetableRedirect(
         startUrl: startUrl,
         fetch: scripted([
           (statusCode: 200, location: null, body: finalPageBody),
@@ -94,8 +98,9 @@ void main() {
       expect(document.body?.text, 'plan');
     });
 
-    test('final URL missing e -> target is null, not a guess', () async {
-      final (_, target) = await resolveTimetableRedirect(
+    test('final URL missing e -> target is null, not a guess, finalUrl '
+        'still returned so a caller can log where it landed', () async {
+      final (_, target, finalUrl) = await resolveTimetableRedirect(
         startUrl: startUrl,
         fetch: scripted([
           (
@@ -107,10 +112,12 @@ void main() {
         ]),
       );
       expect(target, isNull);
+      expect(finalUrl.queryParameters['k'], '1');
+      expect(finalUrl.queryParameters.containsKey('e'), isFalse);
     });
 
     test('final URL missing k -> target is null, not a guess', () async {
-      final (_, target) = await resolveTimetableRedirect(
+      final (_, target, _) = await resolveTimetableRedirect(
         startUrl: startUrl,
         fetch: scripted([
           (
@@ -159,7 +166,7 @@ void main() {
       // etc. never actually occur here, but resolveTimetableRedirect
       // should still degrade safely (target null) rather than trying to
       // follow a Location it has no contract to expect.
-      final (_, target) = await resolveTimetableRedirect(
+      final (_, target, _) = await resolveTimetableRedirect(
         startUrl: startUrl,
         fetch: scripted([
           (
